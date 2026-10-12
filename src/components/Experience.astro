@@ -1,0 +1,358 @@
+---
+import { Image } from 'astro:assets';
+import globalEquityPhoto from '../assets/global-equity-finance.webp';
+import skyriverPhoto from '../assets/skyriver.webp';
+import strykerPhoto from '../assets/stryker.webp';
+import SectionBadge from './SectionBadge.astro';
+
+interface Experience {
+	company: string;
+	formerly?: string;
+	location: string;
+	dates: string;
+	role: string;
+	detail: string;
+	// The figure inside `detail` to pick out
+	metric: string;
+	tags: string[];
+	// focus: the part of the photo the hover reveal is cropped to
+	photo: { src: ImageMetadata; focus: string };
+}
+
+const experiences: Experience[] = [
+	{
+		company: 'Stryker',
+		formerly: 'formerly Vocera Communications',
+		location: 'San Diego, CA',
+		dates: 'February 2022 - Present',
+		role: 'Senior Technical Support Engineer',
+		detail: 'Managing 230+ Linux servers, automating SSL renewals and infrastructure builds',
+		metric: '230+',
+		tags: ['Linux Admin', 'Automation'],
+		photo: { src: strykerPhoto, focus: '50% 10%' },
+	},
+	{
+		company: 'SkyRiver IT',
+		location: 'San Diego, CA',
+		dates: 'September 2021 - February 2022',
+		role: 'Remote Support Technician',
+		detail: 'Network troubleshooting, uncovered a phishing campaign compromising 20+ businesses',
+		metric: '20+',
+		tags: ['Security', 'Networking'],
+		photo: { src: skyriverPhoto, focus: '50% 68%' },
+	},
+	{
+		company: 'Global Equity Finance',
+		location: 'San Diego, CA',
+		dates: 'January 2020 - September 2021',
+		role: 'IT HelpDesk Technician',
+		detail: 'Built automation that cut deployment times by 85%',
+		metric: '85%',
+		tags: ['Python', 'Ansible'],
+		photo: { src: globalEquityPhoto, focus: '50% 90%' },
+	},
+];
+
+const splitAtMetric = ({ detail, metric }: Experience) => {
+	const at = detail.indexOf(metric);
+	return at < 0
+		? [detail, '', '']
+		: [detail.slice(0, at), metric, detail.slice(at + metric.length)];
+};
+---
+
+<section class="experience" id="experience">
+	<header class="head">
+		<div>
+			<SectionBadge label="Experiences" />
+			<h2><span>My Journey</span> <span class="soft">in IT</span></h2>
+		</div>
+
+		<p class="lede">
+			Since 2020, I’ve worked across IT support, infrastructure, and security, from help desk to
+			managing 230+ production servers in a healthcare technology environment.
+		</p>
+	</header>
+
+	<ol class="list">
+		{
+			experiences.map((item) => {
+				const [before, metric, after] = splitAtMetric(item);
+				return (
+					<li class="row">
+						<div class="photo" aria-hidden="true" style={`--focus: ${item.photo.focus}`}>
+							<Image src={item.photo.src} alt="" width={1200} />
+						</div>
+
+						<div class="where">
+							<h3>{item.company}</h3>
+							{item.formerly && <p class="formerly">{item.formerly}</p>}
+							<p class="meta">
+								<span>{item.dates}</span>
+								<span>{item.location}</span>
+							</p>
+						</div>
+
+						<div class="what">
+							<p class="role">{item.role}</p>
+							<p class="detail">
+								{before}
+								{metric && <b>{metric}</b>}
+								{after}
+							</p>
+						</div>
+
+						<ul class="tags">
+							{item.tags.map((tag) => (
+								<li>{tag}</li>
+							))}
+						</ul>
+					</li>
+				);
+			})
+		}
+	</ol>
+</section>
+
+<style>
+	/* The header and every job row share one grid, so the intro paragraph starts
+	   on the same line as the roles below it */
+	.experience {
+		--gutter: clamp(14px, 1.6vw, 24px);
+		--columns: minmax(0, 0.9fr) minmax(0, 1.25fr) minmax(0, 0.7fr);
+		--gap: clamp(20px, 3vw, 56px);
+		padding: clamp(64px, 9vw, 150px) clamp(20px, 5.4vw, 90px);
+	}
+
+	.head,
+	.row {
+		display: grid;
+		grid-template-columns: var(--columns);
+		align-items: start;
+		gap: var(--gap);
+		padding-inline: var(--gutter);
+	}
+
+	.head {
+		align-items: end;
+		margin-inline: calc(var(--gutter) * -1);
+		padding-bottom: clamp(32px, 4vw, 64px);
+		border-bottom: 1px solid var(--rule);
+	}
+
+	h2 {
+		margin: clamp(18px, 1.8vw, 28px) 0 0;
+		font-family: var(--font-display);
+		font-size: clamp(34px, 3.7vw, 62px);
+		font-weight: 400;
+		line-height: 1.08;
+		letter-spacing: -0.025em;
+	}
+
+	h2 span {
+		display: block;
+	}
+
+	h2 .soft {
+		color: var(--ink-body);
+		font-weight: 300;
+	}
+
+	.lede {
+		max-width: 34em;
+		color: var(--ink-body);
+		font-size: clamp(14px, 1.15vw, 17px);
+		line-height: 1.75;
+	}
+
+	.list,
+	.tags {
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+
+	.list {
+		margin-inline: calc(var(--gutter) * -1);
+	}
+
+	/* The header's rule doubles as the first row's top line */
+	.row {
+		position: relative;
+		padding-block: clamp(26px, 3vw, 46px);
+		border-bottom: 1px solid var(--rule);
+		transition: background-color 0.4s;
+	}
+
+	/* Green tick that draws down the left edge of the hovered row */
+	.row::before {
+		content: '';
+		position: absolute;
+		inset: -1px auto -1px 0;
+		width: 2px;
+		background: var(--green);
+		transform: scaleY(0);
+		transform-origin: top;
+		transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+	}
+
+	@media (hover: hover) and (pointer: fine) {
+		.row:hover {
+			background: var(--tint-faint);
+		}
+	}
+
+	@media (hover: hover) and (pointer: fine) {
+		.row:hover::before {
+			transform: scaleY(1);
+		}
+	}
+
+	/* The office photo sits behind the right of the row, masked into the background,
+	   and only fades up on hover */
+	.photo {
+		position: absolute;
+		inset: 0 0 0 auto;
+		width: 52%;
+		overflow: hidden;
+		opacity: 0;
+		pointer-events: none;
+		mask-image: linear-gradient(to right, transparent, #000 70%);
+		transition: opacity 0.6s;
+	}
+
+	.photo :global(img) {
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+		object-position: var(--focus, 50% 50%);
+		transform: scale(1.06);
+		transition: transform 1.2s cubic-bezier(0.22, 1, 0.36, 1);
+	}
+
+	@media (hover: hover) and (pointer: fine) {
+		.row:hover .photo {
+			opacity: 0.45;
+		}
+	}
+
+	@media (hover: hover) and (pointer: fine) {
+		.row:hover .photo :global(img) {
+			transform: none;
+		}
+	}
+
+	.where,
+	.what,
+	.tags {
+		position: relative;
+	}
+
+	h3 {
+		margin: 0;
+		font-size: clamp(20px, 1.9vw, 30px);
+		font-weight: 400;
+		line-height: 1.2;
+		letter-spacing: -0.015em;
+	}
+
+	.formerly {
+		margin-top: 0.35em;
+		color: var(--ink-faint);
+		font-size: clamp(13px, 1vw, 15px);
+	}
+
+	.meta {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.3em 1.4em;
+		margin-top: 1.2em;
+		color: var(--ink-faint);
+		font-family: var(--font-mono);
+		font-size: clamp(11px, 0.82vw, 12.5px);
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+	}
+
+	.role {
+		font-size: clamp(15px, 1.25vw, 19px);
+		line-height: 1.4;
+	}
+
+	.detail {
+		max-width: 32em;
+		margin-top: 0.5em;
+		color: var(--ink-faint);
+		font-size: clamp(14px, 1.15vw, 17px);
+		line-height: 1.6;
+	}
+
+	.detail b {
+		color: var(--ink);
+		font-weight: 500;
+	}
+
+	.tags {
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: flex-end;
+		gap: 6px;
+	}
+
+	.tags li {
+		padding: 0.4em 0.85em;
+		border-radius: 7px;
+		background: var(--tint);
+		color: var(--ink-soft);
+		font-size: clamp(11.5px, 0.85vw, 13px);
+		letter-spacing: 0.01em;
+		transition:
+			background-color 0.4s,
+			color 0.4s;
+	}
+
+	@media (hover: hover) and (pointer: fine) {
+		.row:hover .tags li {
+			background: var(--scrim);
+			color: var(--ink);
+			backdrop-filter: blur(8px);
+		}
+	}
+
+	@media (max-width: 960px) {
+		.experience {
+			--columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+		}
+
+		.tags {
+			grid-column: 2;
+			justify-content: flex-start;
+		}
+	}
+
+	@media (max-width: 720px) {
+		.experience {
+			--columns: minmax(0, 1fr);
+			--gap: 18px;
+		}
+
+		.head {
+			gap: 22px;
+		}
+
+		.tags {
+			grid-column: auto;
+		}
+
+		.photo {
+			display: none;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.row::before,
+		.photo :global(img) {
+			transition: none;
+		}
+	}
+</style>

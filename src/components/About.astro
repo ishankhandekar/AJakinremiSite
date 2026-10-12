@@ -1,0 +1,188 @@
+---
+import SectionBadge from './SectionBadge.astro';
+
+const config = [
+	{ key: 'active_nodes', label: 'Node management', values: ['230+ Linux Production Servers'] },
+	{ key: 'internal_tooling', label: 'Core automation', values: ['SSL2ool Automation Suite'] },
+	{
+		key: 'target_environments',
+		label: 'Infrastructure focus',
+		values: ['RedHat Enterprise Linux (RHEL)', 'CentOS', 'Oracle Linux'],
+	},
+];
+---
+
+<section class="about" id="about">
+	<header class="head">
+		<SectionBadge label="Biography" />
+		<h2 class="sr-only">About AJ</h2>
+	</header>
+
+	<div class="body">
+		<div class="bio">
+			<p class="lead">
+				I started out putting out fires. Now I build the systems that keep them from starting.
+			</p>
+			<p>
+				I began on the help desk, where the job was resolving whatever broke that day. At Stryker
+				the work runs the other way: engineering automation that scales, so a problem is solved
+				once instead of every time it comes back. Day to day that means managing Linux
+				infrastructure, building custom tools where none exist, and keeping the systems underneath
+				secure, alongside a BSc in Computer Science at San Diego Mesa College, currently in
+				progress.
+			</p>
+			<p>
+				The principle behind all of it is simple. If a task is repetitive and easy to get wrong, it
+				should be automated away, not done by hand.
+			</p>
+		</div>
+
+		<aside class="panel" aria-label="Environment status">
+			<p class="bar">
+				<span>environment.conf</span>
+				<span class="status">read-only</span>
+			</p>
+			<ol>
+				{
+					config.map((entry, index) => (
+						<li>
+							<span class="line" aria-hidden="true">
+								{String(index + 1).padStart(2, '0')}
+							</span>
+							<div>
+								<p class="comment"># {entry.label}</p>
+								<p class="key">[ {entry.key} ]</p>
+								{entry.values.map((value) => (
+									<p class="value">{value}</p>
+								))}
+							</div>
+						</li>
+					))
+				}
+			</ol>
+		</aside>
+	</div>
+</section>
+
+<style>
+	.about {
+		--gutter: clamp(14px, 1.6vw, 24px);
+		padding: 0 clamp(20px, 5.4vw, 90px) clamp(64px, 9vw, 150px);
+	}
+
+	.head {
+		margin-inline: calc(var(--gutter) * -1);
+		padding: 0 var(--gutter) clamp(20px, 2.2vw, 32px);
+		border-bottom: 1px solid var(--rule);
+	}
+
+	.sr-only {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		overflow: hidden;
+		clip-path: inset(50%);
+		white-space: nowrap;
+	}
+
+	.body {
+		display: grid;
+		grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+		align-items: start;
+		gap: clamp(40px, 7vw, 130px);
+		padding-top: clamp(32px, 4vw, 64px);
+	}
+
+	.lead {
+		color: var(--ink);
+		font-family: var(--font-display);
+		font-size: clamp(24px, 2.5vw, 42px);
+		line-height: 1.2;
+		letter-spacing: -0.02em;
+		text-wrap: balance;
+	}
+
+	.bio p + p {
+		max-width: 38em;
+		margin-top: 1.3em;
+		color: var(--ink-body);
+		font-size: clamp(15px, 1.2vw, 18px);
+		line-height: 1.75;
+	}
+
+	.bio .lead + p {
+		margin-top: clamp(22px, 2.4vw, 40px);
+	}
+
+	/* A read-only config file rather than a list of jobs */
+	.panel {
+		border: 1px solid var(--rule);
+		border-radius: 12px;
+		background: var(--tint-faint);
+		font-family: var(--font-mono);
+		font-size: clamp(12px, 0.95vw, 14px);
+	}
+
+	.bar {
+		display: flex;
+		justify-content: space-between;
+		gap: 16px;
+		padding: 0.9em 1.3em;
+		border-bottom: 1px solid var(--rule);
+		color: var(--ink-faint);
+		font-size: 0.86em;
+		letter-spacing: 0.06em;
+	}
+
+	.status {
+		display: flex;
+		align-items: center;
+		gap: 0.6em;
+	}
+
+	.status::before {
+		content: '';
+		width: 5px;
+		height: 5px;
+		border-radius: 50%;
+		background: var(--green);
+	}
+
+	ol {
+		margin: 0;
+		padding: 0.4em 0;
+		list-style: none;
+	}
+
+	li {
+		display: grid;
+		grid-template-columns: 2.2em minmax(0, 1fr);
+		gap: 0.6em;
+		padding: 1.1em 1.3em;
+		line-height: 1.7;
+	}
+
+	li + li {
+		border-top: 1px solid var(--tint);
+	}
+
+	.line,
+	.comment {
+		color: var(--ink-dim);
+	}
+
+	.key {
+		color: var(--ink-faint);
+	}
+
+	.value {
+		color: var(--ink);
+	}
+
+	@media (max-width: 860px) {
+		.body {
+			grid-template-columns: minmax(0, 1fr);
+			gap: 40px;
+		}
+	}
+</style>
