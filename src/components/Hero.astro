@@ -31,73 +31,58 @@ const stats = [
 		<div class="intro">
 			<h1>
 				<span class="sr-only">I’m AJ</span>
-				<span aria-hidden="true" data-cipher>I’m AJ</span>
+				<span aria-hidden="true" data-typed>I’m AJ</span><span class="caret" aria-hidden="true"></span>
 			</h1>
-			<!-- Inline so the headline is taken over before first paint -->
+			<!-- Inline so the headline is cleared before first paint -->
 			<script is:inline>
 				(() => {
-					const el = document.querySelector('[data-cipher]');
-					if (!el || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+					const el = document.querySelector('[data-typed]');
+					const caret = el?.nextElementSibling;
+					if (!el || !caret || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
-					const text = el.textContent;
-					const chars = [...text];
-					const pool = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
-					// The first two letters start scrambling at once; the rest join one by one,
-					// then every letter settles from left to right.
-					const revealAt = (i) => (i < 2 ? 0 : 480 + (i - 2) * 160);
-					const settleAt = (i) => 800 + i * 200;
-					const swapEvery = 55;
-
+					const headline = el.textContent;
 					el.textContent = '';
-					const spans = chars.map(() => el.appendChild(document.createElement('span')));
 
-					let start;
-					let lastSwap = -Infinity;
-
-					const frame = (now) => {
-						start ??= now;
-						const t = now - start;
-						const swap = now - lastSwap >= swapEvery;
-						if (swap) lastSwap = now;
-
-						let done = true;
-						chars.forEach((char, i) => {
-							const span = spans[i];
-							if (t >= settleAt(i)) {
-								if (span.dataset.state !== 'done') {
-									span.textContent = char;
-									span.dataset.state = 'done';
-								}
-								return;
+					const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+					// The caret holds steady while keys are going and blinks when idle
+					const busy = async (work) => {
+						caret.classList.add('busy');
+						await work();
+						caret.classList.remove('busy');
+					};
+					const type = (text, speed) =>
+						busy(async () => {
+							for (const char of text) {
+								el.textContent += char;
+								await sleep(speed + Math.random() * 50);
 							}
-							done = false;
-							if (t < revealAt(i)) return;
-							if (char === ' ') {
-								span.textContent = char;
-							} else if (swap || !span.textContent) {
-								span.textContent = pool[Math.floor(Math.random() * pool.length)];
-								span.dataset.state = 'scramble';
+						});
+					const erase = (speed) =>
+						busy(async () => {
+							while (el.textContent) {
+								el.textContent = el.textContent.slice(0, -1);
+								await sleep(speed);
 							}
 						});
 
-						if (done) el.textContent = text;
-						else requestAnimationFrame(frame);
+					const run = async () => {
+						await sleep(700);
+						await type('Hi', 150);
+						await sleep(900);
+						await erase(120);
+						await sleep(1000);
+						await type(headline, 120);
 					};
 
-					const run = () => requestAnimationFrame(frame);
-					Promise.race([
-						document.fonts.load('400 1em Altform'),
-						new Promise((resolve) => setTimeout(resolve, 800)),
-					]).then(run, run);
+					Promise.race([document.fonts.load('400 1em Altform'), sleep(800)]).then(run, run);
 				})();
 			</script>
 			<p class="meta">
-				<span>Anjolaoluwa Akinremi</span>
-				<span class="role">Senior Technical Support Engineer</span>
+				Senior Technical Support Engineer
 			</p>
 		</div>
 
-		<a class="scroll" href="#experience">
+		<a class="scroll" href="#about">
 			Scroll down
 			<svg viewBox="0 0 10 12" width="9" height="11" aria-hidden="true">
 				<path d="M5 0v10.5M1 6.5l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.1"></path>
@@ -219,8 +204,29 @@ const stats = [
 		white-space: nowrap;
 	}
 
-	h1 :global([data-state='scramble']) {
-		color: var(--green);
+	.caret {
+		display: inline-block;
+		width: 0.05em;
+		height: 0.74em;
+		margin-left: 0.07em;
+		background: var(--green);
+		animation: caret-blink 1.05s steps(1) infinite;
+	}
+
+	.caret.busy {
+		animation: none;
+	}
+
+	@keyframes caret-blink {
+		50% {
+			opacity: 0;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.caret {
+			animation: none;
+		}
 	}
 
 	.sr-only {
@@ -246,10 +252,6 @@ const stats = [
 		line-height: 1.4;
 		letter-spacing: 0.08em;
 		text-transform: uppercase;
-	}
-
-	.meta .role {
-		color: var(--ink-faint);
 	}
 
 	.scroll {

@@ -6,8 +6,15 @@ const commands: Record<string, string[]> = {
 		'[placeholder] A short bio goes here: what AJ does, what he cares about, and what he is looking for next.',
 	],
 	certs: [
-		'20 industry certifications across AWS, Red Hat, CompTIA, HashiCorp, Cisco, Azure, Python, and Oracle Java.',
-		'[placeholder] The full list of certifications goes here.',
+		'20 industry certifications:',
+		'  aws        Solutions Architect, Developer, SysOps Administrator, DevOps Engineer Professional',
+		'  red hat    RHCSA, RHCE: Ansible Automation, Containers, Services Management and Automation',
+		'  comptia    A+, Network+, Security+, Linux+, PenTest+',
+		'  hashicorp  Terraform Associate, Vault Associate',
+		'  python     Certified Entry-Level Programmer, Certified Associate in Python',
+		'  microsoft  Azure Administrator Associate',
+		'  cisco      Certified Network Associate',
+		'  oracle     Java Certified Foundations Associate',
 	],
 	projects: [
 		'[placeholder] project-one    A one-line description of the first project.',
@@ -37,7 +44,7 @@ const intro = [
 ];
 ---
 
-<dialog class="terminal" aria-label="Terminal" data-terminal data-lenis-preventdata-commands={JSON.stringify(commands)} data-intro={JSON.stringify(intro)}>
+<dialog class="terminal" aria-label="Terminal" data-terminal data-lenis-prevent data-commands={JSON.stringify(commands)} data-intro={JSON.stringify(intro)}>
 	<div class="window">
 		<div class="bar">
 			<span class="dots" aria-hidden="true"><i></i><i></i><i></i></span>
