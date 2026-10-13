@@ -1,0 +1,91 @@
+---
+import SectionBadge from '../../components/SectionBadge.astro';
+import { projects, type Project } from '../../data/projects';
+import Layout from '../../layouts/Layout.astro';
+
+export function getStaticPaths() {
+	return projects.map((project) => ({ params: { slug: project.slug }, props: { project } }));
+}
+
+interface Props {
+	project: Project;
+}
+
+const { project } = Astro.props;
+---
+
+<Layout title={`${project.title} | AJ Akinremi`}>
+	<main class="page">
+		<a class="back" href="/#projects">
+			<svg viewBox="0 0 12 12" width="11" height="11" aria-hidden="true">
+				<path d="M11 6H1.5M5 2.5L1.5 6 5 9.5" fill="none" stroke="currentColor" stroke-width="1.2"></path>
+			</svg>
+			Back to portfolio
+		</a>
+
+		<header class="head">
+			<SectionBadge label="Project" />
+			<h1>{project.title}</h1>
+			<p class="description">{project.description}</p>
+		</header>
+
+		<!-- Placeholder: the full write-up for this project goes here -->
+		<p class="pending">//Full documentation coming soon</p>
+	</main>
+</Layout>
+
+<style>
+	.page {
+		min-height: 100svh;
+		padding: clamp(28px, 4vw, 64px) clamp(20px, 5.4vw, 90px) clamp(64px, 9vw, 150px);
+	}
+
+	.back {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.6em;
+		color: var(--ink-body);
+		font-size: clamp(13px, 1vw, 15px);
+		transition: color 0.2s;
+	}
+
+	@media (hover: hover) and (pointer: fine) {
+		.back:hover {
+			color: var(--ink);
+		}
+	}
+
+	.head {
+		margin-top: clamp(48px, 8vw, 120px);
+		padding-bottom: clamp(28px, 3.4vw, 56px);
+		border-bottom: 1px solid var(--rule);
+	}
+
+	h1 {
+		max-width: 16em;
+		margin-top: clamp(18px, 1.8vw, 28px);
+		font-family: var(--font-display);
+		font-size: clamp(34px, 5vw, 80px);
+		font-weight: 400;
+		line-height: 1.05;
+		letter-spacing: -0.03em;
+		text-wrap: balance;
+	}
+
+	.description {
+		max-width: 40em;
+		margin-top: clamp(18px, 2vw, 32px);
+		color: var(--ink-body);
+		font-size: clamp(15px, 1.2vw, 18px);
+		line-height: 1.75;
+	}
+
+	.pending {
+		margin-top: clamp(28px, 3.4vw, 56px);
+		color: var(--ink-faint);
+		font-family: var(--font-mono);
+		font-size: clamp(10.5px, 0.8vw, 12px);
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+	}
+</style>

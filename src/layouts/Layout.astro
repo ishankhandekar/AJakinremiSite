@@ -25,9 +25,15 @@ const { title = 'AJ Akinremi' } = Astro.props;
 		/>
 		<title>{title}</title>
 		<script is:inline>
-			try {
-				if (localStorage.getItem('theme') === 'dark') document.documentElement.classList.add('dark');
-			} catch {}
+			// Before first paint: use the visitor's saved choice, otherwise follow their device
+			(() => {
+				let saved = null;
+				try {
+					saved = localStorage.getItem('theme');
+				} catch {}
+				const dark = saved ? saved === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+				document.documentElement.classList.toggle('dark', dark);
+			})();
 		</script>
 	</head>
 	<body>

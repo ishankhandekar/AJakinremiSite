@@ -114,6 +114,19 @@ const splitAtMetric = ({ detail, metric }: Experience) => {
 	</ol>
 </section>
 
+<script>
+	// Tap a job to reveal its photo; tapping it again, or another job, closes it.
+	// The open state only has a visible effect on touch screens.
+	const rows = [...document.querySelectorAll<HTMLElement>('.experience .row')];
+
+	for (const row of rows) {
+		row.addEventListener('click', () => {
+			const open = !row.classList.contains('open');
+			for (const other of rows) other.classList.toggle('open', open && other === row);
+		});
+	}
+</script>
+
 <style>
 	/* The header and every job row share one grid, so the intro paragraph starts
 	   on the same line as the roles below it */
@@ -344,8 +357,53 @@ const splitAtMetric = ({ detail, metric }: Experience) => {
 			grid-column: auto;
 		}
 
+		/* Stacked layout: the photo sits in the bottom half and fades upward */
 		.photo {
-			display: none;
+			inset: auto 0 0;
+			width: auto;
+			height: 190px;
+			mask-image: linear-gradient(to bottom, transparent, #000 75%);
+		}
+	}
+
+	/* Touch screens have no hover, so a tap opens a row instead (see the script) */
+	@media (hover: none) {
+		.row {
+			cursor: pointer;
+			-webkit-tap-highlight-color: transparent;
+			transition:
+				background-color 0.4s,
+				padding-bottom 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+		}
+
+		.row.open {
+			background: var(--tint-faint);
+		}
+
+		.row.open::before {
+			transform: scaleY(1);
+		}
+
+		.row.open .photo {
+			opacity: 0.5;
+		}
+
+		.row.open .photo :global(img) {
+			transform: none;
+		}
+
+		.row.open .tags li {
+			background: var(--scrim);
+			color: var(--ink);
+			backdrop-filter: blur(8px);
+		}
+	}
+
+	/* On a phone the opened row also grows, so the clearest part of the photo
+	   has room of its own under the text */
+	@media (hover: none) and (max-width: 720px) {
+		.row.open {
+			padding-bottom: calc(clamp(26px, 3vw, 46px) + 104px);
 		}
 	}
 

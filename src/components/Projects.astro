@@ -1,0 +1,448 @@
+---
+import { projects } from '../data/projects';
+import SectionBadge from './SectionBadge.astro';
+---
+
+<section class="projects" id="projects" data-pin-section>
+	<div class="pin" data-pin>
+		<header class="head">
+			<SectionBadge label="Portfolio" />
+			<h2 class="sr-only">Portfolio</h2>
+			<p class="note">//A few things I’ve built to solve problems I kept running into</p>
+			<span class="progress" aria-hidden="true"></span>
+		</header>
+
+		<div class="window" data-window>
+			<div class="grid" data-track>
+				{
+					projects.map((project, index) => (
+						<a class:list={['card', project.visual]} href={`/projects/${project.slug}`}>
+							<div class="text">
+								<p class="index">{String(index + 1).padStart(2, '0')}</p>
+								<h3>{project.title}</h3>
+								<p class="description">{project.description}</p>
+								<svg class="arrow" viewBox="0 0 12 12" aria-hidden="true">
+									<path d="M2 10L10 2M3.5 2H10v6.5" fill="none" stroke="currentColor" stroke-width="1.1" />
+								</svg>
+							</div>
+
+							{/* Placeholder drawings: swap each for a real screenshot when there is one */}
+							<div class="visual" aria-hidden="true">
+								{project.visual === 'app' && (
+									<svg class="wire" viewBox="0 0 640 360">
+										<rect class="line" x="0.5" y="0.5" width="639" height="359" rx="10" />
+										<path class="line" d="M0 36h640M150 36v324" />
+										<circle class="fill" cx="20" cy="18" r="4" />
+										<circle class="fill" cx="34" cy="18" r="4" />
+										<circle class="fill" cx="48" cy="18" r="4" />
+										<rect class="fill" x="200" y="10" width="240" height="16" rx="8" />
+
+										<rect class="accent" x="20" y="64" width="96" height="8" rx="4" />
+										<rect class="fill" x="20" y="90" width="110" height="8" rx="4" />
+										<rect class="fill" x="20" y="116" width="84" height="8" rx="4" />
+										<rect class="fill" x="20" y="142" width="102" height="8" rx="4" />
+										<rect class="fill" x="20" y="168" width="70" height="8" rx="4" />
+
+										<rect class="fill" x="178" y="62" width="170" height="12" rx="6" />
+										<rect class="line" x="178.5" y="96.5" width="134" height="64" rx="8" />
+										<rect class="line" x="328.5" y="96.5" width="134" height="64" rx="8" />
+										<rect class="line" x="478.5" y="96.5" width="134" height="64" rx="8" />
+										<rect class="fill" x="192" y="112" width="48" height="8" rx="4" />
+										<rect class="fill" x="192" y="132" width="80" height="12" rx="6" />
+										<rect class="fill" x="342" y="112" width="56" height="8" rx="4" />
+										<rect class="fill" x="342" y="132" width="64" height="12" rx="6" />
+										<rect class="fill" x="492" y="112" width="44" height="8" rx="4" />
+										<rect class="fill" x="492" y="132" width="88" height="12" rx="6" />
+
+										<path class="line" d="M178 196h434M178 228h434M178 260h434M178 292h434M178 324h434" />
+										<rect class="fill" x="178" y="207" width="190" height="8" rx="4" />
+										<rect class="accent" x="560" y="206" width="52" height="10" rx="5" />
+										<rect class="fill" x="178" y="239" width="150" height="8" rx="4" />
+										<rect class="accent" x="560" y="238" width="52" height="10" rx="5" />
+										<rect class="fill" x="178" y="271" width="210" height="8" rx="4" />
+										<rect class="fill" x="560" y="270" width="52" height="10" rx="5" />
+										<rect class="fill" x="178" y="303" width="170" height="8" rx="4" />
+										<rect class="accent" x="560" y="302" width="52" height="10" rx="5" />
+									</svg>
+								)}
+
+								{project.visual === 'topology' && (
+									<svg class="wire" viewBox="0 0 480 270">
+										<path
+											class="line"
+											d="M240 59v24M130 83h220M130 83v38M350 83v38M130 149v24M60 173h140M60 173v38M200 173v38M350 149v24M280 173h140M280 173v38M420 173v38"
+										/>
+										<circle class="node" cx="240" cy="45" r="14" />
+										<circle class="node" cx="130" cy="135" r="14" />
+										<circle class="node" cx="350" cy="135" r="14" />
+										<circle class="node" cx="60" cy="225" r="14" />
+										<circle class="node" cx="200" cy="225" r="14" />
+										<circle class="node" cx="280" cy="225" r="14" />
+										<circle class="node" cx="420" cy="225" r="14" />
+										<circle class="accent" cx="240" cy="45" r="4" />
+										<circle class="fill" cx="130" cy="135" r="4" />
+										<circle class="fill" cx="350" cy="135" r="4" />
+										<circle class="fill" cx="60" cy="225" r="4" />
+										<circle class="fill" cx="200" cy="225" r="4" />
+										<circle class="fill" cx="280" cy="225" r="4" />
+										<circle class="fill" cx="420" cy="225" r="4" />
+									</svg>
+								)}
+
+								{project.visual === 'metric' && (
+									<div class="metric">
+										<p class="figure">
+											85<span>%</span>
+										</p>
+										<p class="caption">faster workstation deployment</p>
+									</div>
+									<svg class="wire" viewBox="0 0 400 190">
+										<rect class="line" x="0.5" y="0.5" width="399" height="189" rx="10" />
+										<path class="line" d="M44 0v190" />
+										<rect class="fill" x="16" y="24" width="12" height="6" rx="3" />
+										<rect class="fill" x="16" y="48" width="12" height="6" rx="3" />
+										<rect class="fill" x="16" y="72" width="12" height="6" rx="3" />
+										<rect class="fill" x="16" y="96" width="12" height="6" rx="3" />
+										<rect class="fill" x="16" y="120" width="12" height="6" rx="3" />
+										<rect class="fill" x="16" y="144" width="12" height="6" rx="3" />
+										<rect class="accent" x="62" y="23" width="64" height="8" rx="4" />
+										<rect class="fill" x="136" y="23" width="110" height="8" rx="4" />
+										<rect class="fill" x="84" y="47" width="150" height="8" rx="4" />
+										<rect class="fill" x="84" y="71" width="92" height="8" rx="4" />
+										<rect class="fill" x="186" y="71" width="130" height="8" rx="4" />
+										<rect class="fill" x="106" y="95" width="180" height="8" rx="4" />
+										<rect class="fill" x="84" y="119" width="70" height="8" rx="4" />
+										<rect class="accent" x="62" y="143" width="44" height="8" rx="4" />
+										<rect class="fill" x="116" y="143" width="96" height="8" rx="4" />
+									</svg>
+								)}
+
+								{project.visual === 'terminal' && (
+									<svg class="wire" viewBox="0 0 480 240">
+										<rect class="line" x="0.5" y="0.5" width="479" height="239" rx="10" />
+										<path class="line" d="M0 34h480" />
+										<circle class="fill" cx="20" cy="17" r="4" />
+										<circle class="fill" cx="34" cy="17" r="4" />
+										<circle class="fill" cx="48" cy="17" r="4" />
+										<rect class="fill" x="180" y="12" width="120" height="10" rx="5" />
+
+										<path class="prompt" d="M22 58l6 5-6 5" />
+										<rect class="fill" x="40" y="59" width="210" height="8" rx="4" />
+										<rect class="tag" x="40" y="83" width="58" height="12" rx="6" />
+										<rect class="fill" x="110" y="85" width="170" height="8" rx="4" />
+										<rect class="tag" x="40" y="107" width="58" height="12" rx="6" />
+										<rect class="fill" x="110" y="109" width="130" height="8" rx="4" />
+										<rect class="tag" x="40" y="131" width="58" height="12" rx="6" />
+										<rect class="fill" x="110" y="133" width="190" height="8" rx="4" />
+										<rect class="tag" x="40" y="155" width="58" height="12" rx="6" />
+										<rect class="fill" x="110" y="157" width="150" height="8" rx="4" />
+
+										<path class="prompt" d="M22 190l6 5-6 5" />
+										<rect class="accent" x="40" y="188" width="9" height="14" rx="1" />
+									</svg>
+								)}
+							</div>
+						</a>
+					))
+				}
+			</div>
+		</div>
+	</div>
+
+	<script>
+		import '../scripts/pin-scroll';
+	</script>
+</section>
+
+<style>
+	.projects {
+		--gutter: clamp(14px, 1.6vw, 24px);
+		/* Placeholder drawings: hairlines and faint fills that follow the theme */
+		--wire: var(--tree-line);
+		--wire-fill: var(--tint);
+		padding: 0 clamp(20px, 5.4vw, 90px) clamp(64px, 9vw, 150px);
+	}
+
+	/* A pinned section above ends flush, so this one brings its own space */
+	:global([data-pinned]) + .projects {
+		padding-top: clamp(64px, 9vw, 150px);
+	}
+
+	.head {
+		position: relative;
+		margin-inline: calc(var(--gutter) * -1);
+		padding: 0 var(--gutter) clamp(20px, 2.2vw, 32px);
+		border-bottom: 1px solid var(--rule);
+	}
+
+	.progress {
+		display: none;
+	}
+
+	.sr-only {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		overflow: hidden;
+		clip-path: inset(50%);
+		white-space: nowrap;
+	}
+
+	.note {
+		max-width: 62em;
+		margin-top: clamp(14px, 1.5vw, 22px);
+		color: var(--ink-faint);
+		font-family: var(--font-mono);
+		font-size: clamp(10.5px, 0.8vw, 12px);
+		line-height: 1.7;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+	}
+
+	/* Two rows that mirror each other: wide + narrow, then narrow + wide */
+	.grid {
+		display: grid;
+		grid-template-columns: repeat(12, minmax(0, 1fr));
+		gap: clamp(14px, 1.6vw, 24px);
+		padding-top: clamp(28px, 3.4vw, 56px);
+	}
+
+	/* Pinned (set by pin-scroll.ts once it has measured the grid): the section is as
+	   tall as one screen plus the grid's overflow, and its contents stick to the screen
+	   while that extra height scrolls past. Same behaviour as the certifications. */
+	.projects[data-pinned] {
+		padding-block: 0;
+	}
+
+	[data-pinned] .pin {
+		position: sticky;
+		top: 0;
+		display: flex;
+		flex-direction: column;
+		height: 100svh;
+		padding-block: clamp(76px, 7.5vw, 116px) clamp(20px, 2.4vw, 40px);
+	}
+
+	[data-pinned] .window {
+		flex: 1;
+		min-height: 0;
+		overflow: hidden;
+		margin-inline: calc(var(--gutter) * -1);
+		padding-inline: var(--gutter);
+		mask-image: linear-gradient(to bottom, transparent, #000 28px, #000 calc(100% - 48px), transparent);
+	}
+
+	[data-pinned] .grid {
+		padding-block: clamp(30px, 3.4vw, 56px) 56px;
+		will-change: transform;
+	}
+
+	/* The header's divider fills with green as the cards scroll through */
+	[data-pinned] .progress {
+		position: absolute;
+		inset: auto 0 -1px;
+		display: block;
+		height: 1px;
+		background: var(--green);
+		transform: scaleX(var(--progress, 0));
+		transform-origin: left;
+	}
+
+	.card {
+		display: flex;
+		flex-direction: column;
+		gap: clamp(22px, 2.4vw, 36px);
+		grid-column: span 5;
+		padding: clamp(20px, 2.2vw, 34px);
+		border: 1px solid var(--rule);
+		border-radius: 16px;
+		transition:
+			background-color 0.35s,
+			border-color 0.35s,
+			transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+	}
+
+	.card:nth-child(4n + 1),
+	.card:nth-child(4n) {
+		grid-column: span 7;
+	}
+
+	.card:focus-visible {
+		outline: 2px solid var(--green);
+		outline-offset: 3px;
+	}
+
+	.text {
+		position: relative;
+		padding-right: clamp(28px, 3vw, 44px);
+	}
+
+	.index {
+		color: var(--ink-faint);
+		font-family: var(--font-mono);
+		font-size: clamp(11px, 0.85vw, 13px);
+		letter-spacing: 0.1em;
+	}
+
+	h3 {
+		margin: 0.7em 0 0;
+		font-family: var(--font-display);
+		font-size: clamp(21px, 1.9vw, 30px);
+		font-weight: 500;
+		line-height: 1.15;
+		letter-spacing: -0.02em;
+		text-wrap: balance;
+	}
+
+	.app h3 {
+		font-size: clamp(24px, 2.5vw, 40px);
+	}
+
+	.description {
+		max-width: 44em;
+		margin-top: 0.9em;
+		color: var(--ink-body);
+		font-size: clamp(14px, 1.05vw, 16px);
+		line-height: 1.65;
+	}
+
+	.arrow {
+		position: absolute;
+		top: 0;
+		right: 0;
+		width: clamp(14px, 1.3vw, 18px);
+		height: auto;
+		color: var(--ink-faint);
+		transition:
+			color 0.3s,
+			transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+	}
+
+	/* The drawing fills whatever height the row leaves under the text */
+	.visual {
+		display: flex;
+		flex: 1;
+		align-items: flex-end;
+		gap: clamp(16px, 2vw, 32px);
+	}
+
+	.wire {
+		display: block;
+		width: 100%;
+		height: auto;
+	}
+
+	.wire .line,
+	.wire .node,
+	.wire .prompt {
+		fill: none;
+		stroke: var(--wire);
+		stroke-width: 1;
+		vector-effect: non-scaling-stroke;
+	}
+
+	.wire .node {
+		fill: var(--bg);
+	}
+
+	.wire .prompt {
+		stroke: var(--green);
+		stroke-width: 1.5;
+	}
+
+	.wire .fill {
+		fill: var(--wire-fill);
+	}
+
+	.wire .tag {
+		fill: none;
+		stroke: var(--wire);
+		vector-effect: non-scaling-stroke;
+	}
+
+	.wire .accent {
+		fill: var(--green);
+		opacity: 0.55;
+	}
+
+	/* The app wireframe keeps a true 16:9 frame */
+	.app .wire {
+		aspect-ratio: 16 / 9;
+	}
+
+	.topology .visual {
+		align-items: center;
+	}
+
+	.metric .visual {
+		align-items: flex-end;
+	}
+
+	.metric .wire {
+		flex: 1;
+		min-width: 0;
+	}
+
+	.figure {
+		font-size: clamp(64px, 7vw, 116px);
+		font-weight: 700;
+		line-height: 0.85;
+		letter-spacing: -0.05em;
+	}
+
+	.figure span {
+		color: var(--green);
+		font-size: 0.55em;
+		vertical-align: 0.5em;
+	}
+
+	.caption {
+		margin-top: 1em;
+		color: var(--ink-faint);
+		font-family: var(--font-mono);
+		font-size: clamp(10.5px, 0.8vw, 12px);
+		letter-spacing: 0.1em;
+		line-height: 1.5;
+		text-transform: uppercase;
+	}
+
+	.metric .metric {
+		flex: none;
+		max-width: 11em;
+	}
+
+	@media (hover: hover) and (pointer: fine) {
+		.card:hover {
+			border-color: var(--tree-line);
+			background: var(--tint-faint);
+			transform: translateY(-4px) scale(1.004);
+		}
+
+		.card:hover .arrow {
+			color: var(--green);
+			transform: translate(3px, -3px);
+		}
+	}
+
+	@media (max-width: 860px) {
+		.card,
+		.card:nth-child(4n + 1),
+		.card:nth-child(4n) {
+			grid-column: 1 / -1;
+		}
+	}
+
+	@media (max-width: 480px) {
+		.metric .visual {
+			flex-direction: column;
+			align-items: stretch;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.card,
+		.arrow {
+			transition: none;
+		}
+	}
+</style>

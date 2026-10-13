@@ -1,0 +1,53 @@
+---
+import SpecSection, { type SpecGroup } from './SpecSection.astro';
+
+const skills: SpecGroup[] = [
+	{
+		name: 'Operating systems',
+		layout: 'inline',
+		items: [{ name: 'CentOS' }, { name: 'RHEL' }, { name: 'Oracle Linux' }],
+	},
+	{
+		name: 'Automation and scripting',
+		layout: 'inline',
+		items: [{ name: 'Python' }, { name: 'Bash' }, { name: 'NodeJS' }, { name: 'Ansible' }],
+	},
+	{
+		name: 'Infrastructure and DevOps',
+		layout: 'inline',
+		items: [
+			{ name: 'Zookeeper' },
+			{ name: 'Kafka' },
+			{ name: 'Vault' },
+			{ name: 'Docker' },
+			{ name: 'systemd' },
+		],
+	},
+	{
+		name: 'Databases',
+		layout: 'inline',
+		items: [{ name: 'MySQL' }, { name: 'MSSQL' }],
+	},
+	{
+		name: 'Security and identity',
+		layout: 'inline',
+		items: [{ name: 'SSL/certificate management' }, { name: 'SAML' }, { name: 'LDAP' }],
+	},
+	{
+		name: 'Integration',
+		layout: 'inline',
+		items: [{ name: 'HL7' }],
+	},
+];
+---
+
+<SpecSection
+	id="skills"
+	label="Skills"
+	title="Skills"
+	unit="skills"
+	note="//PRACTICAL TOOLS AND TECHNOLOGIES USED IN MY DAY TO DAY"
+	groups={skills}
+	size="md"
+	pin
+/>

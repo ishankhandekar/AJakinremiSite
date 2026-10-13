@@ -3,9 +3,13 @@ import Terminal from './Terminal.astro';
 
 // One link per page section; `section` is that section's id
 const links = [
-	{ label: 'Biography', section: 'about' },
-	{ label: 'Experiences', section: 'experience' },
-	{ label: 'Certifications', section: 'certifications' },
+	{ label: 'Bio', section: 'about' },
+	{ label: 'Work', section: 'experience' },
+	{ label: 'Certs', section: 'certifications' },
+	{ label: 'Stack', section: 'skills' },
+	// Points at the first of the build sections; it stays marked through the ones after it
+	{ label: 'Builds', section: 'projects' },
+	{ label: 'Contact', section: 'contact' },
 ];
 ---
 
@@ -61,10 +65,10 @@ const links = [
 				</svg>
 			</button>
 		</div>
-		<a class="cta" href="#contact">
-			<span>Contact Me</span>
+		<a class="cta" href="/AJ-Akinremi-CV.pdf" download>
+			<span>Download CV</span>
 			<svg viewBox="0 0 12 12" width="11" height="11" aria-hidden="true">
-				<path d="M2 10L10 2M3.5 2H10v6.5" fill="none" stroke="currentColor" stroke-width="1.2"></path>
+				<path d="M6 1v7.5M2.5 5.5L6 9l3.5-3.5M1.5 11h9" fill="none" stroke="currentColor" stroke-width="1.2"></path>
 			</svg>
 		</a>
 	</div>
@@ -79,7 +83,11 @@ const links = [
 	// Mark the nav link of whichever section has scrolled up past the middle of the screen
 	const navLinks = [...document.querySelectorAll<HTMLAnchorElement>('.nav a[data-section]')];
 	const spy = () => {
-		const line = window.innerHeight * 0.45;
+		// At the very bottom of the page a short last section can't reach the middle,
+		// so there anything on screen counts
+		const atBottom =
+			window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 2;
+		const line = window.innerHeight * (atBottom ? 1 : 0.45);
 		let current: string | undefined;
 		for (const link of navLinks) {
 			const section = document.getElementById(link.dataset.section ?? '');
@@ -111,6 +119,18 @@ const links = [
 	};
 
 	label();
+
+	// Until the visitor picks a theme here, keep following their device if it changes
+	matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (event) => {
+		let saved = null;
+		try {
+			saved = localStorage.getItem('theme');
+		} catch {}
+		if (saved) return;
+		root.classList.toggle('dark', event.matches);
+		label();
+	});
+
 	toggle?.addEventListener('click', () => {
 		const apply = () => {
 			const dark = root.classList.toggle('dark');
@@ -193,7 +213,17 @@ const links = [
 	.nav a {
 		display: inline-flex;
 		align-items: center;
-		transition: color 0.2s;
+		text-decoration: underline;
+		text-decoration-color: var(--ink-dim);
+		text-decoration-thickness: 1px;
+		text-underline-offset: 0.35em;
+		transition:
+			color 0.2s,
+			text-decoration-color 0.2s;
+	}
+
+	.nav a.active {
+		text-decoration-color: currentColor;
 	}
 
 	/* Green dot that pops in beside the link while its section is on screen.
@@ -434,7 +464,7 @@ const links = [
 
 	@media (hover: hover) and (pointer: fine) {
 		.cta:hover svg {
-			transform: translate(2px, -2px);
+			transform: translateY(2px);
 		}
 	}
 

@@ -1,0 +1,356 @@
+---
+import { statSync } from 'node:fs';
+import { join } from 'node:path';
+import { Image } from 'astro:assets';
+import headshot from '../assets/headshot.png';
+import SectionBadge from './SectionBadge.astro';
+
+const resume = '/AJ-Akinremi-CV.pdf';
+// Measured at build time, so the size shown is always the real file's
+const resumeKb = Math.round(statSync(join(process.cwd(), 'public', resume)).size / 1024);
+const compiled = new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+
+const status = [
+	{ key: 'Status', value: 'Open for opportunities', live: true },
+	{ key: 'Location', value: 'San Diego, CA (PST)' },
+	{ key: 'Compiled', value: compiled },
+];
+
+// Details from AJ's CV
+interface Channel {
+	label: string;
+	handle: string;
+	href: string;
+	download?: boolean;
+	// Filled icon path data on a 24x24 grid
+	icon: string;
+}
+
+const channels: Channel[] = [
+	{
+		label: 'Email',
+		handle: 'aj.akinremi@yahoo.com',
+		href: 'mailto:aj.akinremi@yahoo.com',
+		icon: 'M18.86 1.56L14.27 11.87H19.4L24 1.56H18.86M0 6.71L5.15 18.27L3.3 22.44H7.83L14.69 6.71H10.19L7.39 13.44L4.62 6.71H0M15.62 12.87C13.95 12.87 12.71 14.12 12.71 15.58C12.71 17 13.91 18.19 15.5 18.19C17.18 18.19 18.43 16.96 18.43 15.5C18.43 14.03 17.23 12.87 15.62 12.87Z',
+	},
+	{
+		label: 'GitHub',
+		handle: 'github.com/thecenturist',
+		href: 'https://github.com/thecenturist',
+		icon: 'M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12',
+	},
+	{
+		label: 'LinkedIn',
+		handle: 'linkedin.com/in/aj-akinremi',
+		href: 'https://www.linkedin.com/in/aj-akinremi/',
+		icon: 'M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z',
+	},
+	{
+		label: 'Resume',
+		handle: `download_resume.pdf [ ${resumeKb}kb ]`,
+		href: resume,
+		download: true,
+		icon: 'M7 2h7.5L20 7.5V19a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3V5a3 3 0 0 1 3-3zM12 8.8a2.3 2.3 0 1 0 0 4.6 2.3 2.3 0 0 0 0-4.6zM7.8 18.6c0-2.1 1.9-3.4 4.2-3.4s4.2 1.3 4.2 3.4v.4H7.8z',
+	},
+];
+---
+
+<section class="contact" id="contact">
+	<header class="head">
+		<SectionBadge label="Contact me" />
+	</header>
+
+	<div class="profile">
+		<div class="side">
+			<Image class="headshot" src={headshot} alt="Anjolaoluwa Akinremi" width={200} height={200} />
+			<ul class="status">
+				{
+					status.map((row) => (
+						<li class:list={{ live: row.live }}>
+							<span class="bullet" aria-hidden="true">●</span>
+							{row.key} // {row.value}
+						</li>
+					))
+				}
+			</ul>
+		</div>
+
+		<div class="identity">
+			<h2>Anjolaoluwa Akinremi</h2>
+			<p class="headline">
+				<span>Senior Technical Support &amp; DevOps Engineer</span>
+				<span class="dot" aria-hidden="true">•</span>
+				<span>San Diego, CA</span>
+			</p>
+
+			<ul class="channels">
+				{
+					channels.map((channel) => (
+						<li>
+							<a
+								href={channel.href}
+								target={channel.href.startsWith('http') ? '_blank' : undefined}
+								rel={channel.href.startsWith('http') ? 'noopener' : undefined}
+								download={channel.download}
+							>
+								<span class="label">
+									<svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+										<path fill-rule="evenodd" d={channel.icon} />
+									</svg>
+									{channel.label}
+								</span>
+								<svg class="arrow" viewBox="0 0 16 12" aria-hidden="true">
+									<path d="M0 6h14M9.5 1.5L14 6l-4.5 4.5" fill="none" stroke="currentColor" stroke-width="1.2" />
+								</svg>
+								<span class="handle">{channel.handle}</span>
+							</a>
+						</li>
+					))
+				}
+			</ul>
+		</div>
+	</div>
+
+	<footer class="footer">
+		<p>[ Site engine // Deployed securely on self-made hosting service — All rights reserved ]</p>
+		<p class="credit">
+			Built by <a href="https://studioik.design" target="_blank" rel="noopener">StudioIK</a>
+		</p>
+	</footer>
+</section>
+
+<style>
+	.contact {
+		--gutter: clamp(14px, 1.6vw, 24px);
+		padding: 0 clamp(20px, 5.4vw, 90px) clamp(24px, 2.6vw, 40px);
+	}
+
+	/* A pinned section above ends flush, so this one brings its own space */
+	:global([data-pinned]) + .contact {
+		padding-top: clamp(64px, 9vw, 150px);
+	}
+
+	.head {
+		margin-inline: calc(var(--gutter) * -1);
+		padding: 0 var(--gutter) clamp(20px, 2.2vw, 32px);
+		border-bottom: 1px solid var(--rule);
+	}
+
+	/* No card: the photo and the text sit straight on the page, 30 / 70 */
+	.profile {
+		display: grid;
+		grid-template-columns: minmax(0, 3fr) minmax(0, 7fr);
+		align-items: start;
+		gap: clamp(28px, 4vw, 72px);
+		padding-top: clamp(36px, 4.5vw, 72px);
+	}
+
+	/* Small mono read-out under the photo */
+	.status {
+		display: grid;
+		gap: 0.75em;
+		margin: clamp(22px, 2.4vw, 36px) 0 0;
+		padding: 0;
+		list-style: none;
+		color: var(--ink-faint);
+		font-family: var(--font-mono);
+		font-size: clamp(10.5px, 0.8vw, 12px);
+		line-height: 1.5;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+	}
+
+	.status li {
+		display: flex;
+		gap: 0.8em;
+	}
+
+	.bullet {
+		color: var(--ink-dim);
+		font-size: 0.7em;
+		line-height: 2.1;
+	}
+
+	.live .bullet {
+		color: var(--green);
+	}
+
+	.headshot {
+		width: clamp(132px, 15vw, 220px);
+		height: auto;
+		aspect-ratio: 1;
+		border: 1px solid var(--tree-line);
+		border-radius: 50%;
+		object-fit: cover;
+	}
+
+	h2 {
+		margin: 0;
+		font-size: clamp(32px, 4.2vw, 68px);
+		font-weight: 700;
+		line-height: 1;
+		letter-spacing: -0.04em;
+		text-wrap: balance;
+	}
+
+	.headline {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.2em 0.8em;
+		margin-top: clamp(14px, 1.4vw, 22px);
+		padding-bottom: clamp(24px, 2.6vw, 40px);
+		border-bottom: 1px solid var(--rule);
+		color: var(--ink-body);
+		font-size: clamp(15px, 1.25vw, 19px);
+		line-height: 1.5;
+	}
+
+	.dot {
+		color: var(--ink-dim);
+	}
+
+	.channels {
+		margin: clamp(6px, 0.8vw, 12px) 0 0;
+		padding: 0;
+		list-style: none;
+	}
+
+	/* Flat rows: the whole line is the link */
+	.channels a {
+		display: grid;
+		grid-template-columns: clamp(124px, 12vw, 172px) auto minmax(0, 1fr);
+		align-items: center;
+		gap: clamp(12px, 1.4vw, 22px);
+		padding-block: clamp(15px, 1.5vw, 22px);
+		border-bottom: 1px solid var(--rule);
+		color: var(--ink-body);
+		transition: color 0.25s;
+	}
+
+	.label {
+		display: flex;
+		align-items: center;
+		gap: 0.75em;
+		font-size: clamp(15px, 1.2vw, 18px);
+	}
+
+	/* Solid marks in the same grey as the label beside them */
+	.icon {
+		flex: none;
+		width: 1.45em;
+		height: 1.45em;
+		fill: currentColor;
+	}
+
+	.arrow {
+		width: 16px;
+		height: auto;
+		color: var(--ink-dim);
+		transition:
+			color 0.25s,
+			transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+	}
+
+	.handle {
+		overflow-wrap: anywhere;
+		font-family: var(--font-mono);
+		font-size: clamp(13px, 1.05vw, 16px);
+	}
+
+	/* Closing line across the full width of the page */
+	.footer {
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: space-between;
+		gap: 0.6em 3em;
+		margin: clamp(56px, 8vw, 130px) calc(var(--gutter) * -1) 0;
+		padding: clamp(18px, 2vw, 28px) var(--gutter) 0;
+		border-top: 1px solid var(--rule);
+		color: var(--ink-faint);
+		font-family: var(--font-mono);
+		font-size: clamp(10px, 0.78vw, 11.5px);
+		line-height: 1.7;
+		letter-spacing: 0.1em;
+		text-transform: uppercase;
+	}
+
+	.credit {
+		white-space: nowrap;
+	}
+
+	.credit a {
+		color: var(--ink-body);
+		text-decoration: underline;
+		text-decoration-thickness: 1px;
+		text-underline-offset: 0.3em;
+		transition: color 0.2s;
+	}
+
+	@media (hover: hover) and (pointer: fine) {
+		.credit a:hover {
+			color: var(--ink);
+		}
+	}
+
+	.channels a:focus-visible {
+		outline: 2px solid var(--green);
+		outline-offset: 4px;
+	}
+
+	@media (hover: hover) and (pointer: fine) {
+		.channels a:hover {
+			color: var(--ink);
+		}
+
+		.channels a:hover .arrow {
+			color: var(--green);
+			transform: translateX(4px);
+		}
+	}
+
+	@media (max-width: 720px) {
+		.profile {
+			grid-template-columns: minmax(0, 1fr);
+		}
+
+		.headshot {
+			width: 112px;
+		}
+
+		/* One column: photo, then the name and channels, then the status read-out */
+		.side {
+			display: contents;
+		}
+
+		.status {
+			order: 1;
+			margin-top: 0;
+		}
+
+		/* The location drops to its own line here, so it doesn't need the separator */
+		.dot {
+			display: none;
+		}
+
+		/* Each channel becomes two lines: icon and label, then the address */
+		.channels a {
+			grid-template-columns: minmax(0, 1fr);
+			gap: 6px;
+		}
+
+		.arrow {
+			display: none;
+		}
+
+		.handle {
+			padding-left: calc(1.45 * 15px + 0.75 * 15px);
+			font-size: 12.5px;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.arrow {
+			transition: none;
+		}
+	}
+</style>

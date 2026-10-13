@@ -1,39 +1,32 @@
 ---
-import SectionBadge from './SectionBadge.astro';
-
-interface Vendor {
-	name: string;
-	// 'stack' lists one certification per line, 'inline' runs them along a row
-	layout: 'stack' | 'inline';
-	certs: { name: string; earned?: string }[];
-}
+import SpecSection, { type SpecGroup } from './SpecSection.astro';
 
 // Ordered so each pair of neighbours in the two-column grid is a similar height
-const vendors: Vendor[] = [
+const vendors: SpecGroup[] = [
 	{
 		name: 'AWS',
 		layout: 'stack',
-		certs: [
-			{ name: 'Certified Solutions Architect Associate', earned: 'Oct 2021' },
-			{ name: 'Certified Developer Associate', earned: 'Apr 2022' },
-			{ name: 'Certified SysOps Administrator Associate', earned: 'May 2022' },
-			{ name: 'Certified DevOps Engineer Professional', earned: 'Jun 2022' },
+		items: [
+			{ name: 'Certified Solutions Architect Associate', detail: 'Oct 2021' },
+			{ name: 'Certified Developer Associate', detail: 'Apr 2022' },
+			{ name: 'Certified SysOps Administrator Associate', detail: 'May 2022' },
+			{ name: 'Certified DevOps Engineer Professional', detail: 'Jun 2022' },
 		],
 	},
 	{
 		name: 'Red Hat',
 		layout: 'stack',
-		certs: [
-			{ name: 'Certified Systems Administrator', earned: 'Oct 2021' },
-			{ name: 'Certified Engineer: Ansible Automation', earned: 'Mar 2022' },
-			{ name: 'Certified Specialist in Containers', earned: 'Jul 2023' },
-			{ name: 'Certified Specialist in Services Management and Automation', earned: 'Aug 2023' },
+		items: [
+			{ name: 'Certified Systems Administrator', detail: 'Oct 2021' },
+			{ name: 'Certified Engineer: Ansible Automation', detail: 'Mar 2022' },
+			{ name: 'Certified Specialist in Containers', detail: 'Jul 2023' },
+			{ name: 'Certified Specialist in Services Management and Automation', detail: 'Aug 2023' },
 		],
 	},
 	{
 		name: 'CompTIA',
 		layout: 'inline',
-		certs: [
+		items: [
 			{ name: 'A+' },
 			{ name: 'Network+' },
 			{ name: 'Security+' },
@@ -44,307 +37,43 @@ const vendors: Vendor[] = [
 	{
 		name: 'HashiCorp',
 		layout: 'stack',
-		certs: [
-			{ name: 'Terraform Associate', earned: 'Apr 2022' },
-			{ name: 'Vault Associate', earned: 'Feb 2023' },
+		items: [
+			{ name: 'Terraform Associate', detail: 'Apr 2022' },
+			{ name: 'Vault Associate', detail: 'Feb 2023' },
 		],
 	},
 	{
 		name: 'Python',
 		layout: 'stack',
-		certs: [
-			{ name: 'Certified Entry-Level Programmer', earned: 'Jan 2023' },
-			{ name: 'Certified Associate in Python', earned: 'Apr 2023' },
+		items: [
+			{ name: 'Certified Entry-Level Programmer', detail: 'Jan 2023' },
+			{ name: 'Certified Associate in Python', detail: 'Apr 2023' },
 		],
 	},
 	{
 		name: 'Microsoft',
 		layout: 'stack',
-		certs: [{ name: 'Azure Administrator Associate', earned: 'Nov 2021' }],
+		items: [{ name: 'Azure Administrator Associate', detail: 'Nov 2021' }],
 	},
 	{
 		name: 'Cisco',
 		layout: 'stack',
-		certs: [{ name: 'Certified Network Associate', earned: 'Dec 2021' }],
+		items: [{ name: 'Certified Network Associate', detail: 'Dec 2021' }],
 	},
 	{
 		name: 'Oracle',
 		layout: 'stack',
-		certs: [{ name: 'Java Certified Foundations Associate', earned: 'Apr 2023' }],
+		items: [{ name: 'Java Certified Foundations Associate', detail: 'Apr 2023' }],
 	},
 ];
 ---
 
-<section class="certs" id="certifications" data-cert-pin>
-	<div class="pin" data-pin>
-		<header class="head">
-			<SectionBadge label="Credentials" />
-			<h2 class="sr-only">Certifications</h2>
-			<p class="note">
-				//VERIFIED INFRASTRUCTURE SPECIALIZATIONS ACQUIRED OVER 5+ YEARS OF CONTINUOUS SYSTEMS
-				ADMINISTRATION.
-			</p>
-			<span class="progress" aria-hidden="true"></span>
-		</header>
-
-		<div class="window" data-window>
-			<div class="grid" data-track>
-				{
-					vendors.map((vendor) => (
-						<article class="vendor">
-							<div class="top">
-								<h3>{vendor.name}</h3>
-								<p class="count" aria-label={`${vendor.certs.length} certifications`}>
-									{String(vendor.certs.length).padStart(2, '0')}
-								</p>
-							</div>
-							<ul class:list={['list', vendor.layout]}>
-								{vendor.certs.map((cert) => (
-									<li>
-										<span>{cert.name}</span>
-										{cert.earned && <time>{cert.earned}</time>}
-									</li>
-								))}
-							</ul>
-						</article>
-					))
-				}
-			</div>
-		</div>
-	</div>
-</section>
-
-<script>
-	// While this section is pinned, page scroll moves the grid inside its window
-	// instead of the page, so all eight vendors pass through one screen.
-	const section = document.querySelector<HTMLElement>('[data-cert-pin]');
-	const pin = section?.querySelector<HTMLElement>('[data-pin]');
-	const frame = section?.querySelector<HTMLElement>('[data-window]');
-	const track = section?.querySelector<HTMLElement>('[data-track]');
-
-	if (section && pin && frame && track) {
-		let travel = 0;
-
-		const update = () => {
-			if (!travel) return;
-			const progress = Math.min(Math.max(-section.getBoundingClientRect().top / travel, 0), 1);
-			track.style.transform = `translate3d(0, ${-progress * travel}px, 0)`;
-			section.style.setProperty('--progress', String(progress));
-		};
-
-		const measure = () => {
-			section.setAttribute('data-pinned', '');
-			travel = track.offsetHeight - frame.clientHeight;
-
-			// Everything already fits on one screen: leave the section in normal flow
-			if (travel <= 8) {
-				travel = 0;
-				section.removeAttribute('data-pinned');
-				section.style.height = '';
-				track.style.transform = '';
-				return;
-			}
-
-			section.style.height = `${pin.offsetHeight + travel}px`;
-			update();
-		};
-
-		measure();
-		new ResizeObserver(measure).observe(track);
-		window.addEventListener('resize', measure);
-		window.addEventListener('scroll', update, { passive: true });
-	}
-</script>
-
-<style>
-	.certs {
-		--gutter: clamp(14px, 1.6vw, 24px);
-		padding: 0 clamp(20px, 5.4vw, 90px) clamp(64px, 9vw, 150px);
-	}
-
-	.head {
-		margin-inline: calc(var(--gutter) * -1);
-		padding: 0 var(--gutter) clamp(20px, 2.2vw, 32px);
-		border-bottom: 1px solid var(--rule);
-	}
-
-	.sr-only {
-		position: absolute;
-		width: 1px;
-		height: 1px;
-		overflow: hidden;
-		clip-path: inset(50%);
-		white-space: nowrap;
-	}
-
-	.note {
-		max-width: 62em;
-		margin-top: clamp(14px, 1.5vw, 22px);
-		color: var(--ink-faint);
-		font-family: var(--font-mono);
-		font-size: clamp(10.5px, 0.8vw, 12px);
-		line-height: 1.7;
-		letter-spacing: 0.08em;
-		text-transform: uppercase;
-	}
-
-	.head {
-		position: relative;
-	}
-
-	.progress {
-		display: none;
-	}
-
-	.grid {
-		display: grid;
-		grid-template-columns: repeat(2, minmax(0, 1fr));
-		gap: clamp(48px, 6vw, 100px) clamp(40px, 7vw, 130px);
-		padding-top: clamp(36px, 4.5vw, 72px);
-	}
-
-	/* Pinned (set by the script once it has measured the grid): the section is as tall
-	   as one screen plus the grid's overflow, and its contents stick to the screen
-	   while that extra height scrolls past. */
-	.certs[data-pinned] {
-		padding-block: 0;
-	}
-
-	[data-pinned] .pin {
-		position: sticky;
-		top: 0;
-		display: flex;
-		flex-direction: column;
-		height: 100svh;
-		padding-block: clamp(76px, 7.5vw, 116px) clamp(20px, 2.4vw, 40px);
-	}
-
-	[data-pinned] .window {
-		flex: 1;
-		min-height: 0;
-		overflow: hidden;
-		margin-inline: calc(var(--gutter) * -1);
-		padding-inline: var(--gutter);
-		mask-image: linear-gradient(to bottom, transparent, #000 28px, #000 calc(100% - 48px), transparent);
-	}
-
-	[data-pinned] .grid {
-		padding-block: clamp(30px, 3.4vw, 56px) 56px;
-		will-change: transform;
-	}
-
-	/* The header's divider fills with green as the grid scrolls through */
-	[data-pinned] .progress {
-		position: absolute;
-		inset: auto 0 -1px;
-		display: block;
-		height: 1px;
-		background: var(--green);
-		transform: scaleX(var(--progress, 0));
-		transform-origin: left;
-	}
-
-	/* Heavy vendor name against a small mono count, with a hairline under both */
-	.top {
-		display: flex;
-		align-items: flex-end;
-		justify-content: space-between;
-		gap: 24px;
-		padding-bottom: clamp(14px, 1.5vw, 22px);
-		border-bottom: 1px solid var(--rule);
-		transition: border-color 0.3s;
-	}
-
-	h3 {
-		margin: 0;
-		font-size: clamp(34px, 4vw, 64px);
-		font-weight: 700;
-		line-height: 0.95;
-		letter-spacing: -0.04em;
-		transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
-	}
-
-	.count {
-		padding-bottom: 0.25em;
-		color: var(--ink-faint);
-		font-family: var(--font-mono);
-		font-size: clamp(12px, 1vw, 15px);
-		letter-spacing: 0.1em;
-		transition: color 0.3s;
-	}
-
-	.list {
-		margin: clamp(16px, 1.7vw, 26px) 0 0;
-		padding: 0;
-		list-style: none;
-		color: var(--ink-body);
-		font-family: var(--font-mono);
-		font-size: clamp(12px, 0.95vw, 14px);
-		line-height: 1.95;
-	}
-
-	/* Name on the left, the month it was earned on the right */
-	.stack li {
-		display: flex;
-		justify-content: space-between;
-		gap: 1.5em;
-		padding-block: 0.3em;
-		line-height: 1.5;
-	}
-
-	time {
-		flex: none;
-		color: var(--ink-dim);
-		letter-spacing: 0.04em;
-	}
-
-	/* Every item carries a dot in its left padding. The list is shifted left by that
-	   padding and clipped there, so the dot of whichever item starts a line is hidden. */
-	.inline {
-		--dot-space: 2.3em;
-		display: flex;
-		flex-wrap: wrap;
-		margin-left: calc(var(--dot-space) * -1);
-		clip-path: inset(0 0 0 var(--dot-space));
-	}
-
-	.inline li {
-		position: relative;
-		padding-left: var(--dot-space);
-	}
-
-	.inline li::before {
-		content: '•';
-		position: absolute;
-		left: 0;
-		width: var(--dot-space);
-		color: var(--ink-dim);
-		text-align: center;
-	}
-
-	@media (hover: hover) and (pointer: fine) {
-		.vendor:hover h3 {
-			transform: translateY(-3px);
-		}
-
-		.vendor:hover .count {
-			color: var(--green);
-		}
-
-		.vendor:hover .top {
-			border-color: var(--ink-dim);
-		}
-	}
-
-	@media (max-width: 720px) {
-		.grid {
-			grid-template-columns: minmax(0, 1fr);
-		}
-	}
-
-	@media (prefers-reduced-motion: reduce) {
-		h3 {
-			transition: none;
-		}
-	}
-</style>
+<SpecSection
+	id="certifications"
+	label="Credentials"
+	title="Certifications"
+	unit="certifications"
+	note="//VERIFIED INFRASTRUCTURE SPECIALIZATIONS ACQUIRED OVER 5+ YEARS"
+	groups={vendors}
+	pin
+/>
