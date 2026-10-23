@@ -16,15 +16,17 @@ const { label } = Astro.props;
 		padding: 0.5em 0.9em 0.5em 0.8em;
 		border-radius: 6px;
 		background: color-mix(in srgb, var(--green) 9%, transparent);
-		color: var(--green);
+		color: var(--green-text);
 		font-family: var(--font-mono);
 		font-size: clamp(10.5px, 0.8vw, 12px);
 		letter-spacing: 0.14em;
 		text-transform: uppercase;
 	}
 
+	/* The dot keeps the bright accent */
 	.dot {
 		position: relative;
+		color: var(--green);
 		width: 0.55em;
 		height: 0.55em;
 		border-radius: 50%;

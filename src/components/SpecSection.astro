@@ -43,7 +43,7 @@ const { id, label, title, unit, groups, note, size = 'lg', pin = false } = Astro
 						<article class="group">
 							<div class="top">
 								<h3>{group.name}</h3>
-								<p class="count" aria-label={`${group.items.length} ${unit}`}>
+								<p class="count" aria-label={`${group.items.length} ${group.items.length === 1 ? unit.replace(/s$/, '') : unit}`}>
 									{String(group.items.length).padStart(2, '0')}
 								</p>
 							</div>
@@ -218,7 +218,7 @@ const { id, label, title, unit, groups, note, size = 'lg', pin = false } = Astro
 
 	.detail {
 		flex: none;
-		color: var(--ink-dim);
+		color: var(--ink-faint);
 		letter-spacing: 0.04em;
 	}
 

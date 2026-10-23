@@ -494,7 +494,8 @@ const stats = [
 	:global(.header > :is(.logo, .nav, .actions)) {
 		transition:
 			opacity 0.7s,
-			transform 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+			transform 0.8s cubic-bezier(0.22, 1, 0.36, 1),
+			visibility 0s;
 	}
 
 	:global(.header > .nav) {
@@ -505,10 +506,11 @@ const stats = [
 		transition-delay: 0.16s;
 	}
 
+	/* Hidden from the keyboard too, so Tab can't land on links nobody can see */
 	:global(html[data-intro-chrome] .header > :is(.logo, .nav, .actions)) {
+		visibility: hidden;
 		opacity: 0;
 		transform: translateY(-10px);
-		pointer-events: none;
 	}
 
 	/* Locked at the top while the intro plays */
