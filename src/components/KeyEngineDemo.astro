@@ -1,0 +1,300 @@
+---
+// A recreation of SSL2OOL's key generator in the site's own styles, used on the
+// project card in place of a screenshot. It plays a short loop: a filename types in,
+// the algorithm switches, the button is pressed and a key comes out.
+// Purely decorative: nothing in here is a real control.
+const algorithms = ['RSA', 'ECDSA', 'Ed25519'];
+---
+
+<div class="engine" data-key-engine>
+	<header>
+		<p class="title">Asymmetric Key Engine</p>
+		<p class="sub">Generate a private key without touching OpenSSL</p>
+	</header>
+
+	<div class="field">
+		<p class="label">Filename</p>
+		<div class="input">
+			<span class="typed" data-filename></span><span class="caret"></span>
+			<span class="placeholder" data-placeholder>e.g., api_private.key</span>
+		</div>
+	</div>
+
+	<div class="field">
+		<p class="label">Algorithm profile</p>
+		<div class="segments" style="--active: 0" data-active="0" data-segments>
+			<i class="indicator"></i>
+			{algorithms.map((name) => <span class="segment">{name}</span>)}
+		</div>
+	</div>
+
+	<div class="button" data-button>
+		<svg viewBox="0 0 16 16" aria-hidden="true">
+			<rect x="3" y="7" width="10" height="7" rx="1.5" />
+			<path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2" />
+		</svg>
+		<span data-button-label>Generate private key</span>
+	</div>
+
+	<p class="result" data-result>
+		<span class="tick">✓</span>
+		<span data-result-text>api_private.key created · ECDSA P-256</span>
+	</p>
+</div>
+
+<script>
+	const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+	document.querySelectorAll<HTMLElement>('[data-key-engine]').forEach((engine) => {
+		const filename = engine.querySelector<HTMLElement>('[data-filename]')!;
+		const placeholder = engine.querySelector<HTMLElement>('[data-placeholder]')!;
+		const segments = engine.querySelector<HTMLElement>('[data-segments]')!;
+		const button = engine.querySelector<HTMLElement>('[data-button]')!;
+		const buttonLabel = engine.querySelector<HTMLElement>('[data-button-label]')!;
+
+		const name = 'api_private.key';
+		const choose = (index: number) => {
+			segments.style.setProperty('--active', String(index));
+			segments.dataset.active = String(index);
+		};
+
+		// Without motion, show the finished state and stop there
+		if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
+			filename.textContent = name;
+			placeholder.hidden = true;
+			choose(1);
+			engine.dataset.state = 'done';
+			return;
+		}
+
+		let visible = false;
+		let running = false;
+
+		const reset = () => {
+			filename.textContent = '';
+			placeholder.hidden = false;
+			choose(0);
+			buttonLabel.textContent = 'Generate private key';
+			engine.dataset.state = '';
+		};
+
+		const play = async () => {
+			running = true;
+			while (visible) {
+				reset();
+				await sleep(900);
+				placeholder.hidden = true;
+				engine.dataset.state = 'typing';
+				for (const char of name) {
+					filename.textContent += char;
+					await sleep(55 + Math.random() * 45);
+				}
+				engine.dataset.state = '';
+				await sleep(500);
+				choose(1);
+				await sleep(900);
+				engine.dataset.state = 'pressed';
+				await sleep(160);
+				engine.dataset.state = 'working';
+				buttonLabel.textContent = 'Generating…';
+				await sleep(900);
+				buttonLabel.textContent = 'Generate private key';
+				engine.dataset.state = 'done';
+				await sleep(3200);
+				engine.dataset.state = 'fading';
+				await sleep(450);
+			}
+			running = false;
+		};
+
+		// Only loops while the card is on screen
+		new IntersectionObserver(([entry]) => {
+			visible = entry.isIntersecting;
+			if (visible && !running) play();
+		}).observe(engine);
+
+		reset();
+	});
+</script>
+
+<style>
+	.engine {
+		display: grid;
+		align-content: start;
+		min-height: 100%;
+		gap: 18px;
+		padding: 24px 26px 28px;
+		border: 1px solid var(--tree-line);
+		border-radius: 14px 0 0 0;
+		background: var(--surface);
+		color: var(--ink);
+		/* The demo keeps its own type sizes, so it stays legible at any card width */
+		font-size: 14px;
+		transition: opacity 0.4s;
+	}
+
+	.engine[data-state='fading'] {
+		opacity: 0.35;
+	}
+
+	.title {
+		font-family: var(--font-display);
+		font-size: 17px;
+		font-weight: 500;
+		letter-spacing: -0.01em;
+	}
+
+	.sub {
+		margin-top: 4px;
+		color: var(--ink-faint);
+		font-size: 13px;
+	}
+
+	.field {
+		display: grid;
+		gap: 8px;
+	}
+
+	.label {
+		color: var(--ink-faint);
+		font-family: var(--font-mono);
+		font-size: 10.5px;
+		letter-spacing: 0.1em;
+		text-transform: uppercase;
+	}
+
+	.input {
+		position: relative;
+		display: flex;
+		align-items: center;
+		height: 38px;
+		padding: 0 12px;
+		border: 1px solid var(--rule);
+		border-radius: 8px;
+		font-family: var(--font-mono);
+		font-size: 13px;
+		transition: border-color 0.3s;
+	}
+
+	[data-state='typing'] .input {
+		border-color: var(--green);
+	}
+
+	.placeholder {
+		position: absolute;
+		left: 12px;
+		color: var(--ink-dim);
+	}
+
+	.placeholder[hidden] {
+		display: none;
+	}
+
+	.caret {
+		display: inline-block;
+		width: 1.5px;
+		height: 15px;
+		margin-left: 1px;
+		background: var(--green);
+		opacity: 0;
+	}
+
+	[data-state='typing'] .caret {
+		opacity: 1;
+	}
+
+	/* Three equal segments with a green block that slides to the chosen one */
+	.segments {
+		position: relative;
+		display: grid;
+		grid-template-columns: repeat(3, 1fr);
+		padding: 3px;
+		border: 1px solid var(--rule);
+		border-radius: 8px;
+	}
+
+	.indicator {
+		position: absolute;
+		top: 3px;
+		bottom: 3px;
+		left: 3px;
+		width: calc((100% - 6px) / 3);
+		border-radius: 5px;
+		background: var(--green);
+		transform: translateX(calc(var(--active) * 100%));
+		transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+	}
+
+	.segment {
+		position: relative;
+		padding: 7px 0;
+		color: var(--ink-faint);
+		font-size: 13px;
+		text-align: center;
+		transition: color 0.3s;
+	}
+
+	[data-active='0'] .segment:nth-of-type(1),
+	[data-active='1'] .segment:nth-of-type(2),
+	[data-active='2'] .segment:nth-of-type(3) {
+		color: var(--on-green);
+		font-weight: 500;
+	}
+
+	.button {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 8px;
+		height: 40px;
+		border-radius: 8px;
+		background: var(--ink);
+		color: var(--bg);
+		font-size: 13.5px;
+		font-weight: 500;
+		transition:
+			transform 0.15s,
+			opacity 0.3s;
+	}
+
+	.button svg {
+		width: 14px;
+		height: 14px;
+		fill: none;
+		stroke: currentColor;
+		stroke-width: 1.4;
+	}
+
+	[data-state='pressed'] .button {
+		transform: scale(0.97);
+	}
+
+	[data-state='working'] .button {
+		opacity: 0.7;
+	}
+
+	.result {
+		display: flex;
+		gap: 8px;
+		margin-top: -6px;
+		color: var(--ink-body);
+		font-family: var(--font-mono);
+		font-size: 12px;
+		white-space: nowrap;
+		opacity: 0;
+		transform: translateY(-4px);
+		transition:
+			opacity 0.35s,
+			transform 0.35s;
+	}
+
+	.tick {
+		color: var(--green);
+	}
+
+	[data-state='done'] .result,
+	[data-state='fading'] .result {
+		opacity: 1;
+		transform: none;
+	}
+</style>

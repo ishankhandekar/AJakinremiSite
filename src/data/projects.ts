@@ -1,10 +1,19 @@
+import type { ImageMetadata } from 'astro';
+import ssl2oolShot from '../assets/projects/ssl2ool.webp';
+
 // Shared by the projects grid on the home page and the /projects/[slug] pages
 export interface Project {
 	slug: string;
 	title: string;
 	description: string;
 	// Which placeholder drawing stands in until real screenshots exist
-	visual: 'app' | 'topology' | 'metric' | 'terminal';
+	visual: 'app' | 'terminal';
+	// The full screenshot, for the project's own page
+	image?: ImageMetadata;
+	// A close crop of one panel, shown on the card in place of the drawing
+	crop?: ImageMetadata;
+	// A live recreation of part of the app, shown on the card in place of the drawing
+	demo?: 'key-engine';
 }
 
 // Copy is drawn from AJ's CV; keep it to claims the CV supports
@@ -15,20 +24,8 @@ export const projects: Project[] = [
 		description:
 			'A web-based tool that replaces command-line SSL utilities like OpenSSL. Built with Vue.js, Python and FastAPI, it gives developers and IT teams a point-and-click interface for generating certificate signing requests and Java keystores, and for validating SSL certificates.',
 		visual: 'app',
-	},
-	{
-		slug: 'linux-environment',
-		title: '7-Server Linux Environment',
-		description:
-			'Designed and deployed a seven-server Linux environment at Global Equity Finance to deliver graphic news content across two floors. Custom Bash scripts and systemd services automate content changes, with Ansible handling configuration management.',
-		visual: 'topology',
-	},
-	{
-		slug: 'deployment-automation',
-		title: 'Workstation Deployment Automation',
-		description:
-			'Python automation tools for wide-scale software deployments at Global Equity Finance, which reduced workstation deployment times by 85%.',
-		visual: 'metric',
+		image: ssl2oolShot,
+		demo: 'key-engine',
 	},
 	{
 		slug: 'multi-ssh',

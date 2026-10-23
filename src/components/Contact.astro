@@ -92,6 +92,7 @@ const channels: Channel[] = [
 								target={channel.href.startsWith('http') ? '_blank' : undefined}
 								rel={channel.href.startsWith('http') ? 'noopener' : undefined}
 								download={channel.download}
+								data-cv-trigger={channel.download ? '' : undefined}
 							>
 								<span class="label">
 									<svg class="icon" viewBox="0 0 24 24" aria-hidden="true">

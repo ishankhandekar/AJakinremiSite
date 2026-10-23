@@ -1,5 +1,7 @@
 ---
+import { Image } from 'astro:assets';
 import { projects } from '../data/projects';
+import KeyEngineDemo from './KeyEngineDemo.astro';
 import SectionBadge from './SectionBadge.astro';
 ---
 
@@ -16,7 +18,7 @@ import SectionBadge from './SectionBadge.astro';
 			<div class="grid" data-track>
 				{
 					projects.map((project, index) => (
-						<a class:list={['card', project.visual]} href={`/projects/${project.slug}`}>
+						<a class:list={['card', project.visual, { 'has-shot': project.crop || project.demo, 'has-demo': project.demo }]} href={`/projects/${project.slug}`}>
 							<div class="text">
 								<p class="index">{String(index + 1).padStart(2, '0')}</p>
 								<h3>{project.title}</h3>
@@ -26,8 +28,22 @@ import SectionBadge from './SectionBadge.astro';
 								</svg>
 							</div>
 
-							{/* Placeholder drawings: swap each for a real screenshot when there is one */}
+							{/* A recreation or a close crop of the real app where there is one, otherwise a placeholder drawing */}
 							<div class="visual" aria-hidden="true">
+								{project.demo === 'key-engine' ? (
+									<div class="shot">
+										<KeyEngineDemo />
+									</div>
+								) : project.crop ? (
+									<Image
+										class="shot"
+										src={project.crop}
+										alt=""
+										widths={[700, 1000]}
+										sizes="(max-width: 860px) 700px, 60vw"
+									/>
+								) : (
+								<>
 								{project.visual === 'app' && (
 									<svg class="wire" viewBox="0 0 640 360">
 										<rect class="line" x="0.5" y="0.5" width="639" height="359" rx="10" />
@@ -66,57 +82,6 @@ import SectionBadge from './SectionBadge.astro';
 									</svg>
 								)}
 
-								{project.visual === 'topology' && (
-									<svg class="wire" viewBox="0 0 480 270">
-										<path
-											class="line"
-											d="M240 59v24M130 83h220M130 83v38M350 83v38M130 149v24M60 173h140M60 173v38M200 173v38M350 149v24M280 173h140M280 173v38M420 173v38"
-										/>
-										<circle class="node" cx="240" cy="45" r="14" />
-										<circle class="node" cx="130" cy="135" r="14" />
-										<circle class="node" cx="350" cy="135" r="14" />
-										<circle class="node" cx="60" cy="225" r="14" />
-										<circle class="node" cx="200" cy="225" r="14" />
-										<circle class="node" cx="280" cy="225" r="14" />
-										<circle class="node" cx="420" cy="225" r="14" />
-										<circle class="accent" cx="240" cy="45" r="4" />
-										<circle class="fill" cx="130" cy="135" r="4" />
-										<circle class="fill" cx="350" cy="135" r="4" />
-										<circle class="fill" cx="60" cy="225" r="4" />
-										<circle class="fill" cx="200" cy="225" r="4" />
-										<circle class="fill" cx="280" cy="225" r="4" />
-										<circle class="fill" cx="420" cy="225" r="4" />
-									</svg>
-								)}
-
-								{project.visual === 'metric' && (
-									<div class="metric">
-										<p class="figure">
-											85<span>%</span>
-										</p>
-										<p class="caption">faster workstation deployment</p>
-									</div>
-									<svg class="wire" viewBox="0 0 400 190">
-										<rect class="line" x="0.5" y="0.5" width="399" height="189" rx="10" />
-										<path class="line" d="M44 0v190" />
-										<rect class="fill" x="16" y="24" width="12" height="6" rx="3" />
-										<rect class="fill" x="16" y="48" width="12" height="6" rx="3" />
-										<rect class="fill" x="16" y="72" width="12" height="6" rx="3" />
-										<rect class="fill" x="16" y="96" width="12" height="6" rx="3" />
-										<rect class="fill" x="16" y="120" width="12" height="6" rx="3" />
-										<rect class="fill" x="16" y="144" width="12" height="6" rx="3" />
-										<rect class="accent" x="62" y="23" width="64" height="8" rx="4" />
-										<rect class="fill" x="136" y="23" width="110" height="8" rx="4" />
-										<rect class="fill" x="84" y="47" width="150" height="8" rx="4" />
-										<rect class="fill" x="84" y="71" width="92" height="8" rx="4" />
-										<rect class="fill" x="186" y="71" width="130" height="8" rx="4" />
-										<rect class="fill" x="106" y="95" width="180" height="8" rx="4" />
-										<rect class="fill" x="84" y="119" width="70" height="8" rx="4" />
-										<rect class="accent" x="62" y="143" width="44" height="8" rx="4" />
-										<rect class="fill" x="116" y="143" width="96" height="8" rx="4" />
-									</svg>
-								)}
-
 								{project.visual === 'terminal' && (
 									<svg class="wire" viewBox="0 0 480 240">
 										<rect class="line" x="0.5" y="0.5" width="479" height="239" rx="10" />
@@ -140,6 +105,8 @@ import SectionBadge from './SectionBadge.astro';
 										<path class="prompt" d="M22 190l6 5-6 5" />
 										<rect class="accent" x="40" y="188" width="9" height="14" rx="1" />
 									</svg>
+								)}
+								</>
 								)}
 							</div>
 						</a>
@@ -199,7 +166,7 @@ import SectionBadge from './SectionBadge.astro';
 		text-transform: uppercase;
 	}
 
-	/* Two rows that mirror each other: wide + narrow, then narrow + wide */
+	/* One full-width row per project */
 	.grid {
 		display: grid;
 		grid-template-columns: repeat(12, minmax(0, 1fr));
@@ -252,7 +219,7 @@ import SectionBadge from './SectionBadge.astro';
 		display: flex;
 		flex-direction: column;
 		gap: clamp(22px, 2.4vw, 36px);
-		grid-column: span 5;
+		grid-column: 1 / -1;
 		padding: clamp(20px, 2.2vw, 34px);
 		border: 1px solid var(--rule);
 		border-radius: 16px;
@@ -260,11 +227,6 @@ import SectionBadge from './SectionBadge.astro';
 			background-color 0.35s,
 			border-color 0.35s,
 			transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
-	}
-
-	.card:nth-child(4n + 1),
-	.card:nth-child(4n) {
-		grid-column: span 7;
 	}
 
 	.card:focus-visible {
@@ -333,16 +295,11 @@ import SectionBadge from './SectionBadge.astro';
 	}
 
 	.wire .line,
-	.wire .node,
 	.wire .prompt {
 		fill: none;
 		stroke: var(--wire);
 		stroke-width: 1;
 		vector-effect: non-scaling-stroke;
-	}
-
-	.wire .node {
-		fill: var(--bg);
 	}
 
 	.wire .prompt {
@@ -365,50 +322,47 @@ import SectionBadge from './SectionBadge.astro';
 		opacity: 0.55;
 	}
 
+	/* A real screenshot runs off the card's bottom and right edges, where the card's rounded
+	   corner cuts it off; on hover it slides up out of the corner */
+	.has-shot {
+		overflow: hidden;
+	}
+
+	.has-shot .visual {
+		position: relative;
+		min-height: clamp(230px, 24vw, 400px);
+		margin: 0 calc(-1 * clamp(20px, 2.2vw, 34px)) calc(-1 * clamp(20px, 2.2vw, 34px)) 0;
+	}
+
+	.shot {
+		position: absolute;
+		top: 0;
+		left: 0;
+		/* Kept large so the interface stays legible, even on a phone */
+		width: max(118%, 660px);
+		height: auto;
+		max-width: none;
+		/* The crop starts at the panel's own border; this rounds off its corner cleanly */
+		border-radius: 14px 0 0 0;
+		transition:
+			transform 0.6s cubic-bezier(0.22, 1, 0.36, 1),
+			box-shadow 0.6s;
+	}
+
+	/* The recreated panel sets its own type sizes, so it needs less overhang than a screenshot */
+	.has-demo .visual {
+		min-height: clamp(330px, 27vw, 420px);
+	}
+
+	/* Always runs past the card's bottom edge, however tall the row is */
+	.has-demo .shot {
+		bottom: -2px;
+		width: max(110%, 360px);
+	}
+
 	/* The app wireframe keeps a true 16:9 frame */
 	.app .wire {
 		aspect-ratio: 16 / 9;
-	}
-
-	.topology .visual {
-		align-items: center;
-	}
-
-	.metric .visual {
-		align-items: flex-end;
-	}
-
-	.metric .wire {
-		flex: 1;
-		min-width: 0;
-	}
-
-	.figure {
-		font-size: clamp(64px, 7vw, 116px);
-		font-weight: 700;
-		line-height: 0.85;
-		letter-spacing: -0.05em;
-	}
-
-	.figure span {
-		color: var(--green);
-		font-size: 0.55em;
-		vertical-align: 0.5em;
-	}
-
-	.caption {
-		margin-top: 1em;
-		color: var(--ink-faint);
-		font-family: var(--font-mono);
-		font-size: clamp(10.5px, 0.8vw, 12px);
-		letter-spacing: 0.1em;
-		line-height: 1.5;
-		text-transform: uppercase;
-	}
-
-	.metric .metric {
-		flex: none;
-		max-width: 11em;
 	}
 
 	@media (hover: hover) and (pointer: fine) {
@@ -422,26 +376,46 @@ import SectionBadge from './SectionBadge.astro';
 			color: var(--green);
 			transform: translate(3px, -3px);
 		}
-	}
 
-	@media (max-width: 860px) {
-		.card,
-		.card:nth-child(4n + 1),
-		.card:nth-child(4n) {
-			grid-column: 1 / -1;
+		.card:hover .shot {
+			transform: translate(-8px, -10px);
+			box-shadow: 0 24px 48px -24px rgb(0 0 0 / 0.45);
 		}
 	}
 
-	@media (max-width: 480px) {
-		.metric .visual {
-			flex-direction: column;
-			align-items: stretch;
+	/* Wider screens: text on one side, the visual on the other, swapping sides each row */
+	@media (min-width: 861px) {
+		.card {
+			display: grid;
+			grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+			align-items: center;
+			gap: clamp(32px, 4.5vw, 80px);
+			min-height: clamp(380px, 34vw, 540px);
+		}
+
+		.card:nth-child(even) {
+			grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+		}
+
+		.card:nth-child(even) .text {
+			order: 2;
+		}
+
+		.visual {
+			align-items: center;
+		}
+
+		/* A bled panel fills the full height of its row, running off the right and bottom edges */
+		.has-shot .visual {
+			align-self: stretch;
+			margin-top: 0;
 		}
 	}
 
 	@media (prefers-reduced-motion: reduce) {
 		.card,
-		.arrow {
+		.arrow,
+		.shot {
 			transition: none;
 		}
 	}

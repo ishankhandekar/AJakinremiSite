@@ -1,0 +1,464 @@
+---
+import { statSync } from 'node:fs';
+import { join } from 'node:path';
+
+// Opened by any link marked `data-cv-trigger`. Those stay plain download links,
+// so the CV still downloads if this script never runs.
+const resume = '/AJ-Akinremi-CV.pdf';
+const resumeKb = Math.round(statSync(join(process.cwd(), 'public', resume)).size / 1024);
+
+// AJ's backend for emailing the CV (see CV-EMAIL.md). While it's unset, sending is
+// simulated and always succeeds, so the front end can be shown before the backend exists.
+const endpoint = import.meta.env.PUBLIC_CV_ENDPOINT ?? '';
+---
+
+<dialog class="cv-panel" aria-labelledby="cv-panel-title" data-cv-panel data-endpoint={endpoint} data-lenis-prevent>
+	<div class="inner">
+		<header class="top">
+			<p class="title" id="cv-panel-title">Get AJ’s CV</p>
+			<button class="close" type="button" aria-label="Close" data-cv-close>
+				<svg viewBox="0 0 12 12" aria-hidden="true">
+					<path d="M2 2l8 8M10 2l-8 8" fill="none" stroke="currentColor" stroke-width="1.2"></path>
+				</svg>
+			</button>
+		</header>
+
+		<!-- The main action: the same one-click download as before -->
+		<a class="download" href={resume} download data-cv-download>
+			<svg viewBox="0 0 12 12" aria-hidden="true">
+				<path d="M6 1v7.5M2.5 5.5L6 9l3.5-3.5M1.5 11h9" fill="none" stroke="currentColor" stroke-width="1.2"></path>
+			</svg>
+			Download PDF
+			<span class="size">{resumeKb}kb</span>
+		</a>
+
+		<p class="divider"><span>or email it to me</span></p>
+
+		<form class="email" novalidate data-cv-form>
+			<div class="row">
+				<label class="sr-only" for="cv-email">Your email address</label>
+				<input
+					id="cv-email"
+					type="email"
+					name="email"
+					placeholder="you@company.com"
+					autocomplete="email"
+					inputmode="email"
+					required
+				/>
+				<button class="send" type="submit" data-cv-send>Send</button>
+			</div>
+			<!-- Honeypot: hidden from people, so anything typed here came from a bot -->
+			<input class="trap" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" />
+			<p class="note" data-cv-message aria-live="polite">Only used to send you the CV.</p>
+		</form>
+
+		<p class="sent" data-cv-sent hidden aria-live="polite"></p>
+	</div>
+</dialog>
+
+<script>
+	const panel = document.querySelector<HTMLDialogElement>('[data-cv-panel]');
+
+	if (panel) {
+		const form = panel.querySelector<HTMLFormElement>('[data-cv-form]')!;
+		const input = form.querySelector<HTMLInputElement>('input[name="email"]')!;
+		const trap = form.querySelector<HTMLInputElement>('input[name="website"]')!;
+		const send = panel.querySelector<HTMLButtonElement>('[data-cv-send]')!;
+		const message = panel.querySelector<HTMLElement>('[data-cv-message]')!;
+		const sent = panel.querySelector<HTMLElement>('[data-cv-sent]')!;
+		const endpoint = panel.dataset.endpoint ?? '';
+		const note = message.textContent ?? '';
+		const sheet = matchMedia('(max-width: 720px)');
+		let opener: HTMLElement | null = null;
+
+		const setMessage = (text: string, error = false) => {
+			message.textContent = text;
+			message.classList.toggle('error', error);
+		};
+
+		const reset = () => {
+			form.hidden = false;
+			form.reset();
+			sent.hidden = true;
+			send.disabled = false;
+			send.textContent = 'Send';
+			setMessage(note);
+		};
+
+		// Desktop: drops down from whatever opened it. Phones: a sheet from the bottom edge
+		const place = () => {
+			if (sheet.matches || !opener) {
+				panel.style.removeProperty('top');
+				panel.style.removeProperty('left');
+				return;
+			}
+			const anchor = opener.getBoundingClientRect();
+			const width = panel.offsetWidth;
+			const height = panel.offsetHeight;
+			const left = Math.min(Math.max(anchor.right - width, 16), innerWidth - width - 16);
+			const below = anchor.bottom + 12;
+			const top = below + height > innerHeight - 16 ? Math.max(anchor.top - height - 12, 16) : below;
+			panel.style.left = `${left}px`;
+			panel.style.top = `${top}px`;
+		};
+
+		const open = (trigger: HTMLElement) => {
+			opener = trigger;
+			reset();
+			panel.showModal();
+			place();
+			// Reading the size commits the starting position, so adding the class animates from it
+			void panel.offsetWidth;
+			panel.classList.add('shown');
+		};
+
+		const close = () => {
+			if (!panel.open) return;
+			panel.classList.remove('shown');
+			setTimeout(() => {
+				panel.close();
+				opener?.focus({ preventScroll: true });
+			}, 200);
+		};
+
+		document.addEventListener('click', (event) => {
+			const trigger = (event.target as Element).closest?.<HTMLElement>('[data-cv-trigger]');
+			if (!trigger) return;
+			event.preventDefault();
+			open(trigger);
+		});
+
+		panel.querySelector('[data-cv-close]')!.addEventListener('click', close);
+		panel.querySelector('[data-cv-download]')!.addEventListener('click', () => setTimeout(close, 150));
+
+		// Esc and clicks on the backdrop close it, with the same exit animation
+		panel.addEventListener('cancel', (event) => {
+			event.preventDefault();
+			close();
+		});
+		panel.addEventListener('click', (event) => {
+			if (event.target === panel) close();
+		});
+		addEventListener('resize', () => panel.open && place());
+
+		form.addEventListener('submit', async (event) => {
+			event.preventDefault();
+			const email = input.value.trim();
+			if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+				setMessage('Enter a valid email address.', true);
+				input.focus();
+				return;
+			}
+
+			send.disabled = true;
+			send.textContent = 'Sending…';
+			setMessage(note);
+
+			try {
+				if (endpoint) {
+					const controller = new AbortController();
+					const timeout = setTimeout(() => controller.abort(), 15000);
+					const response = await fetch(endpoint, {
+						method: 'POST',
+						headers: { 'Content-Type': 'application/json' },
+						body: JSON.stringify({ email, website: trap.value }),
+						signal: controller.signal,
+					});
+					clearTimeout(timeout);
+					if (!response.ok) {
+						const body = await response.json().catch(() => null);
+						throw new Error(body?.message ?? '');
+					}
+				} else {
+					// No backend yet: behave as if it went through
+					await new Promise((resolve) => setTimeout(resolve, 900));
+				}
+
+				form.hidden = true;
+				sent.hidden = false;
+				sent.innerHTML = '';
+				const tick = document.createElement('span');
+				tick.className = 'tick';
+				tick.textContent = '✓';
+				const strong = document.createElement('b');
+				strong.textContent = email;
+				sent.append(tick, ' Sent to ', strong, '. Check your inbox.');
+				place();
+			} catch (error) {
+				send.disabled = false;
+				send.textContent = 'Send';
+				const reason = error instanceof Error && error.message ? error.message : 'Couldn’t send it.';
+				setMessage(`${reason} Try again, or download it instead.`, true);
+			}
+		});
+
+		input.addEventListener('input', () => message.classList.contains('error') && setMessage(note));
+	}
+</script>
+
+<style>
+	/* A small rounded panel: white on light, black on dark */
+	.cv-panel {
+		position: fixed;
+		inset: auto;
+		width: min(340px, calc(100vw - 32px));
+		max-width: none;
+		margin: 0;
+		padding: 0;
+		border: 1px solid var(--rule);
+		border-radius: 14px;
+		background: var(--surface);
+		box-shadow: 0 24px 60px -24px rgb(0 0 0 / 0.35);
+		color: var(--ink);
+		opacity: 0;
+		transform: translateY(-6px);
+		transition:
+			opacity 0.2s,
+			transform 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+	}
+
+	.cv-panel.shown {
+		opacity: 1;
+		transform: none;
+	}
+
+	/* No dimming on desktop: it reads as a dropdown */
+	.cv-panel::backdrop {
+		background: transparent;
+	}
+
+	.inner {
+		display: grid;
+		gap: 16px;
+		padding: 18px;
+	}
+
+	.top {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+	}
+
+	.title {
+		color: var(--ink-faint);
+		font-family: var(--font-mono);
+		font-size: 11px;
+		letter-spacing: 0.1em;
+		text-transform: uppercase;
+	}
+
+	.close {
+		display: grid;
+		place-items: center;
+		width: 28px;
+		height: 28px;
+		margin: -6px -6px -6px 0;
+		padding: 0;
+		border: 0;
+		border-radius: 8px;
+		background: none;
+		color: var(--ink-faint);
+		cursor: pointer;
+	}
+
+	.close svg {
+		width: 11px;
+		height: 11px;
+	}
+
+	.download {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 9px;
+		height: 44px;
+		border-radius: 10px;
+		background: var(--ink);
+		color: var(--bg);
+		font-size: 15px;
+		font-weight: 500;
+	}
+
+	.download svg {
+		width: 12px;
+		height: 12px;
+	}
+
+	.size {
+		opacity: 0.55;
+		font-family: var(--font-mono);
+		font-size: 11px;
+		font-weight: 400;
+	}
+
+	.divider {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		color: var(--ink-faint);
+		font-family: var(--font-mono);
+		font-size: 10.5px;
+		letter-spacing: 0.1em;
+		text-transform: uppercase;
+	}
+
+	.divider::before,
+	.divider::after {
+		content: '';
+		flex: 1;
+		height: 1px;
+		background: var(--rule);
+	}
+
+	.email {
+		display: grid;
+		gap: 8px;
+	}
+
+	.email[hidden] {
+		display: none;
+	}
+
+	.row {
+		display: flex;
+		gap: 8px;
+	}
+
+	input[type='email'] {
+		flex: 1;
+		min-width: 0;
+		height: 40px;
+		padding: 0 12px;
+		border: 1px solid var(--tree-line);
+		border-radius: 10px;
+		background: transparent;
+		color: var(--ink);
+		font: inherit;
+		font-family: var(--font-mono);
+		font-size: 13px;
+		outline: none;
+		transition: border-color 0.2s;
+	}
+
+	input[type='email']::placeholder {
+		color: var(--ink-dim);
+	}
+
+	input[type='email']:focus {
+		border-color: var(--green);
+	}
+
+	.send {
+		flex: none;
+		height: 40px;
+		padding: 0 16px;
+		border: 1px solid var(--tree-line);
+		border-radius: 10px;
+		background: transparent;
+		color: var(--ink);
+		font: inherit;
+		font-size: 14px;
+		cursor: pointer;
+		transition:
+			border-color 0.2s,
+			opacity 0.2s;
+	}
+
+	.send:disabled {
+		cursor: default;
+		opacity: 0.6;
+	}
+
+	.note {
+		color: var(--ink-faint);
+		font-size: 12.5px;
+	}
+
+	.note.error {
+		color: #d14343;
+	}
+
+	.sent {
+		padding: 4px 0 2px;
+		color: var(--ink-body);
+		font-size: 14px;
+		line-height: 1.5;
+	}
+
+	.sent :global(.tick) {
+		color: var(--green);
+	}
+
+	.sent :global(b) {
+		color: var(--ink);
+		font-weight: 500;
+		overflow-wrap: anywhere;
+	}
+
+	.trap {
+		position: absolute;
+		left: -9999px;
+		width: 1px;
+		height: 1px;
+		opacity: 0;
+	}
+
+	.sr-only {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		overflow: hidden;
+		clip-path: inset(50%);
+		white-space: nowrap;
+	}
+
+	.download:focus-visible,
+	.send:focus-visible,
+	.close:focus-visible {
+		outline: 1px solid var(--green);
+		outline-offset: 2px;
+	}
+
+	@media (hover: hover) and (pointer: fine) {
+		.download:hover {
+			opacity: 0.88;
+		}
+
+		.send:not(:disabled):hover,
+		.close:hover {
+			border-color: var(--ink-faint);
+			color: var(--ink);
+		}
+	}
+
+	/* Phones: a sheet from the bottom edge, with the page dimmed behind it */
+	@media (max-width: 720px) {
+		.cv-panel {
+			inset: auto 0 0;
+			width: 100%;
+			border-width: 1px 0 0;
+			border-radius: 18px 18px 0 0;
+			transform: translateY(100%);
+		}
+
+		.cv-panel::backdrop {
+			background: var(--scrim);
+		}
+
+		.inner {
+			padding: 20px 20px calc(20px + env(safe-area-inset-bottom));
+		}
+
+		/* 16px keeps iOS from zooming in on focus */
+		input[type='email'] {
+			font-size: 16px;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.cv-panel {
+			transition: none;
+		}
+	}
+</style>

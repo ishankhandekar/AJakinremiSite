@@ -1,10 +1,41 @@
 ---
-// Placeholder copy: swap for AJ's real answers
-const commands: Record<string, string[]> = {
+import { statSync } from 'node:fs';
+import { join } from 'node:path';
+import { projects } from '../data/projects';
+
+// A line of output: plain text, or text that links somewhere and/or is tinted
+type Line = string | { text: string; href?: string; tone?: 'accent' | 'dim' };
+
+const resume = '/AJ-Akinremi-CV.pdf';
+const resumeKb = Math.round(statSync(join(process.cwd(), 'public', resume)).size / 1024);
+
+// Everything here is drawn from AJ's CV and the rest of the site
+const links = {
+	email: { label: 'aj.akinremi@yahoo.com', href: 'mailto:aj.akinremi@yahoo.com' },
+	linkedin: { label: 'linkedin.com/in/aj-akinremi', href: 'https://www.linkedin.com/in/aj-akinremi/' },
+	github: { label: 'github.com/thecenturist', href: 'https://github.com/thecenturist' },
+	resume: { label: `AJ-Akinremi-CV.pdf (${resumeKb} kB)`, href: resume },
+};
+
+const commands: Record<string, Line[]> = {
 	about: [
-		'Anjolaoluwa "AJ" Akinremi — Senior Technical Support Engineer, San Diego, CA.',
-		'[placeholder] A short bio goes here: what AJ does, what he cares about, and what he is looking for next.',
+		'Anjolaoluwa "AJ" Akinremi, Senior Technical Support Engineer at Stryker, San Diego, CA.',
+		'Started on the help desk in 2020. Now manages 230+ Linux servers and builds the automation that keeps them running.',
+		'Studying for a BSc in Computer Science at San Diego Mesa College.',
 	],
+	whoami: ['aj  (Anjolaoluwa Akinremi), senior technical support engineer, san diego, ca'],
+	experience: [
+		{ text: '2022 - now   Stryker (formerly Vocera Communications)', tone: 'accent' },
+		'             Senior Technical Support Engineer',
+		{ text: '2021 - 2022  SkyRiver IT', tone: 'accent' },
+		'             Remote Support Technician',
+		{ text: '2020 - 2021  Global Equity Finance', tone: 'accent' },
+		'             IT HelpDesk Technician',
+	],
+	projects: projects.map((project) => ({
+		text: `${project.title.padEnd(36)}/projects/${project.slug}`,
+		href: `/projects/${project.slug}`,
+	})),
 	certs: [
 		'20 industry certifications:',
 		'  aws        Solutions Architect, Developer, SysOps Administrator, DevOps Engineer Professional',
@@ -16,35 +47,69 @@ const commands: Record<string, string[]> = {
 		'  cisco      Certified Network Associate',
 		'  oracle     Java Certified Foundations Associate',
 	],
-	projects: [
-		'[placeholder] project-one    A one-line description of the first project.',
-		'[placeholder] project-two    A one-line description of the second project.',
-		'[placeholder] project-three  A one-line description of the third project.',
+	stack: [
+		'  os           CentOS, RHEL, Oracle Linux',
+		'  automation   Python, Bash, NodeJS, Ansible',
+		'  infra        Zookeeper, Kafka, Vault, Docker, systemd',
+		'  databases    MySQL, MSSQL',
+		'  security     SSL/certificate management, SAML, LDAP',
+		'  integration  HL7',
+	],
+	history: [
+		'    1  helpdesk --employer "Global Equity Finance"    # 2020',
+		'    2  ansible-playbook news-displays.yml             # 7-server linux environment',
+		'    3  python3 deploy_workstations.py                 # 85% faster deployments',
+		'    4  remote-support --employer "SkyRiver IT"        # 2021',
+		'    5  systemctl start support-engineer@stryker       # 2022',
+		'    6  ./ssl2ool                                      # oct 2023',
+		'    7  ./multi-ssh                                    # jan 2024',
+		'    8  history',
 	],
 	contact: [
-		'email     aj.akinremi@yahoo.com',
-		'linkedin  linkedin.com/in/aj-akinremi',
-		'github    github.com/thecenturist',
+		{ text: `email     ${links.email.label}`, href: links.email.href },
+		{ text: `linkedin  ${links.linkedin.label}`, href: links.linkedin.href },
+		{ text: `github    ${links.github.label}`, href: links.github.href },
 	],
+	ls: ['about.txt   contact.txt   experience.txt   stack.txt   certs/   projects/   resume.pdf'],
+	pwd: ['/home/aj'],
 	help: [
-		'Available commands:',
-		'  about     who AJ is',
-		'  certs     certifications',
-		'  projects  things AJ has built',
-		'  contact   how to reach AJ',
-		'  clear     clear the screen',
-		'  exit      close the terminal',
+		'about        who AJ is              whoami      the short version',
+		'experience   where AJ has worked    projects    things AJ has built',
+		'certs        certifications         stack       tools AJ uses daily',
+		'neofetch     system info            uptime      time in IT',
+		'history      career, as a shell     contact     how to reach AJ',
+		'resume       download the CV        open <x>    email, linkedin, github, resume',
+		'ls, cat, pwd, echo, date            clear       exit',
+		{ text: 'Tab completes, ↑ and ↓ recall earlier commands, Ctrl+C stops output, Ctrl+L clears.', tone: 'dim' },
 	],
 };
 
-const buttons = ['about', 'certs', 'projects', 'contact', 'help'];
-const intro = [
-	'Hi, I’m AJ. Click a command below, or type one and hit enter.',
-	`Try: ${buttons.join(', ')}`,
+// The prebaked commands along the bottom
+const buttons = [
+	'about',
+	'whoami',
+	'neofetch',
+	'experience',
+	'projects',
+	'certs',
+	'stack',
+	'uptime',
+	'history',
+	'ls',
+	'resume',
+	'contact',
+	'help',
 ];
+
+const intro: Line[] = [
+	'Hi, I’m AJ. Click a command below, or type one and hit enter.',
+	{ text: 'Tab completes, ↑ and ↓ recall earlier commands, help lists everything.', tone: 'dim' },
+];
+
+const config = { commands, links, intro };
 ---
 
-<dialog class="terminal" aria-label="Terminal" data-terminal data-lenis-prevent data-commands={JSON.stringify(commands)} data-intro={JSON.stringify(intro)}>
+<dialog class="terminal" aria-label="Terminal" data-terminal data-lenis-prevent data-config={JSON.stringify(config)}>
 	<div class="window">
 		<div class="bar">
 			<span class="dots" aria-hidden="true"><i></i><i></i><i></i></span>
@@ -70,8 +135,8 @@ const intro = [
 
 	<div class="commands">
 		{
-			buttons.map((command) => (
-				<button type="button" data-command={command}>
+			buttons.map((command, index) => (
+				<button type="button" data-command={command} style={`--i: ${index}`}>
 					{command}
 				</button>
 			))
@@ -80,22 +145,96 @@ const intro = [
 </dialog>
 
 <script>
+	type Line = string | { text: string; href?: string; tone?: 'accent' | 'dim' };
+	interface Config {
+		commands: Record<string, Line[]>;
+		links: Record<string, { label: string; href: string }>;
+		intro: Line[];
+	}
+
 	const dialog = document.querySelector<HTMLDialogElement>('[data-terminal]');
 	const output = dialog?.querySelector<HTMLElement>('[data-output]');
 	const form = dialog?.querySelector<HTMLFormElement>('[data-prompt]');
 	const input = form?.querySelector<HTMLInputElement>('input');
 
 	if (dialog && output && form && input) {
-		const commands: Record<string, string[]> = JSON.parse(dialog.dataset.commands ?? '{}');
-		const intro: string[] = JSON.parse(dialog.dataset.intro ?? '[]');
+		const { commands, links, intro }: Config = JSON.parse(dialog.dataset.config ?? '{}');
 		const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 		// Don't pop the on-screen keyboard open on touch devices
 		const finePointer = matchMedia('(hover: hover) and (pointer: fine)').matches;
+
+		// Files that `ls` lists and `cat` prints
+		const files: Record<string, string> = {
+			'about.txt': 'about',
+			'contact.txt': 'contact',
+			'experience.txt': 'experience',
+			'stack.txt': 'stack',
+		};
+		const folders: Record<string, string> = { certs: 'certs', projects: 'projects' };
+
+		// Commands worked out when they run, rather than fixed text
+		const careerStart = new Date(2020, 0, 1);
+
+		const uptime = () => {
+			const now = new Date();
+			const months =
+				(now.getFullYear() - careerStart.getFullYear()) * 12 + now.getMonth() - careerStart.getMonth();
+			const years = Math.floor(months / 12);
+			const rest = months % 12;
+			return `${years} year${years === 1 ? '' : 's'}, ${rest} month${rest === 1 ? '' : 's'}`;
+		};
+
+		const neofetch = (): Line[] => {
+			const art = ['  \\\\      ', '   \\\\     ', '    >>    ', '   //     ', '  // ____ ', '          '];
+			const info = [
+				'aj@portfolio',
+				'------------',
+				'os        RHEL, CentOS, Oracle Linux',
+				'role      Senior Technical Support Engineer',
+				'employer  Stryker',
+				`uptime    ${uptime()}`,
+				'shell     bash, python',
+				'certs     20',
+				'location  San Diego, CA',
+			];
+			// Phones are too narrow for the logo beside the details, so it goes above them
+			const narrow = matchMedia('(max-width: 720px)').matches;
+			const tone = (index: number) => (index < 2 ? ('accent' as const) : undefined);
+			if (narrow) {
+				return [
+					...art.slice(0, 5).map((text) => ({ text, tone: 'accent' as const })),
+					...info.map((text, index) => ({ text, tone: tone(index) })),
+				];
+			}
+			return info.map((text, index) => ({
+				text: `${(art[index] ?? '          ').padEnd(12)}${text}`,
+				tone: tone(index),
+			}));
+		};
+
+		const builtins = [
+			'cat',
+			'clear',
+			'date',
+			'echo',
+			'exit',
+			'neofetch',
+			'open',
+			'resume',
+			'uptime',
+		];
+		const allCommands = [...new Set([...Object.keys(commands), ...builtins])].sort();
 
 		let opener: HTMLElement | null = null;
 		let queue = Promise.resolve();
 		// Bumped to make whatever is typing finish instantly
 		let generation = 0;
+		let interrupted = false;
+
+		// Earlier commands, for the arrow keys
+		const history: string[] = [];
+		let historyIndex = 0;
+		let draft = '';
 
 		const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 		const scrollToEnd = () => (output.scrollTop = output.scrollHeight);
@@ -109,20 +248,33 @@ const intro = [
 			return line;
 		};
 
-		const type = async (lines: string[], className = 'line') => {
+		const type = async (lines: Line[], className = 'line') => {
 			const mine = generation;
-			for (const text of lines) {
-				const line = addLine(`${className} typing`);
-				for (let i = 0; i < text.length; i += 2) {
+			// Long answers type faster so they don't drag
+			const step = lines.length > 6 ? 5 : 2;
+			for (const line of lines) {
+				const spec = typeof line === 'string' ? { text: line } : line;
+				const element = addLine(`${className} typing ${spec.tone ?? ''}`.trim());
+				let target: HTMLElement = element;
+				if (spec.href) {
+					const link = document.createElement('a');
+					link.href = spec.href;
+					if (spec.href.startsWith('http')) {
+						link.target = '_blank';
+						link.rel = 'noopener';
+					}
+					target = element.appendChild(link);
+				}
+				for (let i = 0; i < spec.text.length; i += step) {
 					if (mine !== generation || reducedMotion) break;
-					line.textContent = text.slice(0, i + 2);
+					target.textContent = spec.text.slice(0, i + step);
 					scrollToEnd();
 					await sleep(22);
 				}
-				line.textContent = text;
-				line.classList.remove('typing');
+				target.textContent = spec.text;
+				element.classList.remove('typing');
 				scrollToEnd();
-				if (mine === generation && !reducedMotion) await sleep(70);
+				if (mine === generation && !reducedMotion) await sleep(60);
 			}
 		};
 
@@ -131,21 +283,175 @@ const intro = [
 			queue = queue.then(task);
 		};
 
+		// Closest known command, for "did you mean"
+		const distance = (a: string, b: string) => {
+			const row = Array.from({ length: b.length + 1 }, (_, i) => i);
+			for (let i = 1; i <= a.length; i++) {
+				let previous = row[0];
+				row[0] = i;
+				for (let j = 1; j <= b.length; j++) {
+					const current = row[j];
+					row[j] = Math.min(row[j] + 1, row[j - 1] + 1, previous + (a[i - 1] === b[j - 1] ? 0 : 1));
+					previous = current;
+				}
+			}
+			return row[b.length];
+		};
+
+		const suggest = (name: string) => {
+			let best = '';
+			let bestScore = Infinity;
+			for (const candidate of allCommands) {
+				const score = distance(name, candidate);
+				if (score < bestScore) [best, bestScore] = [candidate, score];
+			}
+			return bestScore <= 2 ? best : '';
+		};
+
+		const download = (href: string) => {
+			const link = document.createElement('a');
+			link.href = href;
+			link.download = '';
+			link.click();
+		};
+
+		const openTarget = (target: string): Line[] => {
+			const link = links[target];
+			if (!link) return [`open: ${target || 'nothing'}: try email, linkedin, github or resume`];
+			if (target === 'resume') download(link.href);
+			else if (link.href.startsWith('mailto:')) location.href = link.href;
+			else window.open(link.href, '_blank', 'noopener');
+			return [{ text: `opening ${link.label}`, tone: 'dim' }];
+		};
+
+		const execute = (command: string): Line[] | 'clear' | 'exit' => {
+			const [name, ...args] = command.split(/\s+/);
+			const arg = args.join(' ');
+			const key = name.toLowerCase();
+
+			switch (key) {
+				case 'clear':
+					return 'clear';
+				case 'exit':
+					return 'exit';
+				case 'neofetch':
+					return neofetch();
+				case 'uptime': {
+					const time = new Date().toLocaleTimeString('en-GB');
+					return [`${time} up ${uptime()},  1 user,  load average: 0.08, 0.03, 0.01`];
+				}
+				case 'date':
+					return [new Date().toString()];
+				case 'echo':
+					return [arg];
+				case 'resume':
+					return openTarget('resume');
+				case 'open':
+					return openTarget(arg.toLowerCase());
+				case 'cat': {
+					const file = arg.toLowerCase();
+					if (files[file]) return commands[files[file]];
+					if (file === 'resume.pdf') return ['cat: resume.pdf: binary file, try: resume'];
+					if (folders[file.replace(/\/$/, '')]) return [`cat: ${file}: Is a directory`];
+					return [`cat: ${arg || 'missing file name'}: No such file or directory`];
+				}
+				case 'ls': {
+					const folder = folders[arg.toLowerCase().replace(/\/$/, '')];
+					return folder ? commands[folder] : commands.ls;
+				}
+			}
+
+			if (key in commands) return commands[key];
+
+			const guess = suggest(key);
+			return [
+				{ text: 'command not found, type help for a list of commands', tone: undefined },
+				...(guess ? [{ text: `did you mean: ${guess}`, tone: 'dim' as const }] : []),
+			];
+		};
+
 		const run = (raw: string) => {
 			const command = raw.trim();
 			if (!command) return;
+			if (history[history.length - 1] !== command) history.push(command);
+			historyIndex = history.length;
 
 			enqueue(async () => {
-				const echo = addLine('echo');
-				echo.textContent = `$ ${command}`;
+				interrupted = false;
+				addLine('echo', `$ ${command}`);
 
-				const name = command.toLowerCase();
-				if (name === 'clear') return output.replaceChildren();
-				if (name === 'exit') return close();
-				if (name in commands) return type(commands[name]);
-				return type(['command not found, type help for a list of commands'], 'line error');
+				const result = execute(command);
+				if (result === 'clear') return output.replaceChildren();
+				if (result === 'exit') return close();
+				const known = !(typeof result[0] === 'object' && result[0].text.startsWith('command not found'));
+				await type(result, known ? 'line' : 'line error');
 			});
 		};
+
+		// Tab completion: fill in the one match, or the shared part of several and list them
+		const complete = () => {
+			const value = input.value;
+			const parts = value.split(/\s+/);
+			const completingArgument = parts.length > 1;
+			const word = parts[parts.length - 1].toLowerCase();
+			const pool = !completingArgument
+				? allCommands
+				: parts[0] === 'open'
+					? Object.keys(links)
+					: parts[0] === 'cat' || parts[0] === 'ls'
+						? [...Object.keys(files), ...Object.keys(folders).map((f) => `${f}/`), 'resume.pdf']
+						: [];
+			const matches = pool.filter((candidate) => candidate.startsWith(word));
+			if (!matches.length) return;
+
+			let shared = matches[0];
+			for (const match of matches) {
+				while (!match.startsWith(shared)) shared = shared.slice(0, -1);
+			}
+			const filled = matches.length === 1 ? `${matches[0]}${completingArgument ? '' : ' '}` : shared;
+			parts[parts.length - 1] = filled;
+			input.value = parts.join(' ');
+
+			if (matches.length > 1 && shared === word) {
+				addLine('echo', `$ ${value}`);
+				addLine('line dim', matches.join('   '));
+			}
+		};
+
+		input.addEventListener('keydown', (event) => {
+			if (event.key === 'Tab') {
+				event.preventDefault();
+				complete();
+			} else if (event.key === 'ArrowUp') {
+				if (!history.length) return;
+				event.preventDefault();
+				if (historyIndex === history.length) draft = input.value;
+				historyIndex = Math.max(0, historyIndex - 1);
+				input.value = history[historyIndex];
+			} else if (event.key === 'ArrowDown') {
+				if (historyIndex >= history.length) return;
+				event.preventDefault();
+				historyIndex += 1;
+				input.value = historyIndex === history.length ? draft : history[historyIndex];
+			} else if (event.ctrlKey && event.key.toLowerCase() === 'l') {
+				event.preventDefault();
+				generation++;
+				output.replaceChildren();
+			} else if (
+				event.ctrlKey &&
+				event.key.toLowerCase() === 'c' &&
+				input.selectionStart === input.selectionEnd
+			) {
+				// Like a real shell: stop the output and abandon the current line
+				event.preventDefault();
+				generation++;
+				if (!interrupted) {
+					addLine('echo', `$ ${input.value}^C`);
+					interrupted = true;
+				}
+				input.value = '';
+			}
+		});
 
 		const open = (from: HTMLElement) => {
 			if (dialog.open) return;
@@ -204,7 +510,8 @@ const intro = [
 			input.value = '';
 		});
 
-		output.addEventListener('click', () => {
+		output.addEventListener('click', (event) => {
+			if ((event.target as HTMLElement).closest('a')) return;
 			if (finePointer && !getSelection()?.toString()) input.focus();
 		});
 	}
@@ -337,8 +644,31 @@ const intro = [
 		color: var(--green);
 	}
 
+	.output :global(.accent) {
+		color: #3ee07f;
+	}
+
 	.output :global(.error) {
 		color: #f87171;
+	}
+
+	/* After .error, so a "did you mean" hint under an error stays grey */
+	.output :global(.dim) {
+		color: #7a7a7a;
+	}
+
+	.output :global(a) {
+		color: inherit;
+		text-decoration: underline;
+		text-decoration-color: #4a4a4a;
+		text-underline-offset: 0.25em;
+	}
+
+	@media (hover: hover) and (pointer: fine) {
+		.output :global(a:hover) {
+			color: #3ee07f;
+			text-decoration-color: currentColor;
+		}
 	}
 
 	.output :global(.typing)::after {
@@ -378,65 +708,78 @@ const intro = [
 		color: #5e5e5e;
 	}
 
+	/* The prebaked commands read as links: plain text with a green underline */
 	.commands {
 		display: flex;
 		flex-wrap: wrap;
-		gap: 10px;
+		gap: 10px 22px;
+		padding: 2px clamp(4px, 0.6vw, 8px);
 	}
 
 	.commands button {
-		padding: 0.6em 1.3em;
-		border: 1px solid var(--edge);
-		border-radius: 10px;
-		background: #111;
-		color: #ededed;
+		flex: none;
+		padding: 0.2em 0;
+		color: #d8d8d8;
 		font: inherit;
-		font-size: clamp(13px, 1.1vw, 16px);
+		font-size: clamp(13px, 1vw, 15px);
+		text-decoration: underline;
+		text-decoration-color: var(--green);
+		text-decoration-thickness: 1.5px;
+		text-underline-offset: 0.3em;
 		cursor: pointer;
 		opacity: 0;
 		transform: translateY(10px);
 		transition:
 			opacity 0.2s,
 			transform 0.2s,
-			border-color 0.2s,
-			background-color 0.2s;
+			color 0.2s;
 	}
 
 	[data-state='open'] .commands button {
 		opacity: 1;
 		transform: none;
 		transition:
-			opacity 0.4s calc(0.35s + var(--i) * 60ms),
-			transform 0.5s calc(0.35s + var(--i) * 60ms) cubic-bezier(0.2, 0.8, 0.2, 1),
-			border-color 0.2s,
-			background-color 0.2s;
-	}
-
-	.commands button:nth-child(1) {
-		--i: 0;
-	}
-	.commands button:nth-child(2) {
-		--i: 1;
-	}
-	.commands button:nth-child(3) {
-		--i: 2;
-	}
-	.commands button:nth-child(4) {
-		--i: 3;
-	}
-	.commands button:nth-child(5) {
-		--i: 4;
+			opacity 0.4s calc(0.35s + var(--i, 0) * 40ms),
+			transform 0.5s calc(0.35s + var(--i, 0) * 40ms) cubic-bezier(0.2, 0.8, 0.2, 1),
+			color 0.2s;
 	}
 
 	.commands button:focus-visible {
-		border-color: #4a4a4a;
-		background: #1a1a1a;
+		outline: 1px solid var(--green);
+		outline-offset: 3px;
 	}
 
 	@media (hover: hover) and (pointer: fine) {
 		.commands button:hover {
-			border-color: #4a4a4a;
-			background: #1a1a1a;
+			color: #3ee07f;
+		}
+	}
+
+	/* Phones: a three-column grid in a short box that scrolls up and down, so the
+	   buttons don't eat the screen. The half-visible third row hints there's more. */
+	@media (max-width: 720px) {
+		.commands {
+			display: grid;
+			grid-template-columns: repeat(3, minmax(0, 1fr));
+			gap: 6px;
+			max-height: 104px;
+			overflow-y: auto;
+			overscroll-behavior: contain;
+			scrollbar-width: none;
+			mask-image: linear-gradient(to bottom, #000 calc(100% - 22px), transparent);
+		}
+
+		.commands::-webkit-scrollbar {
+			display: none;
+		}
+
+		.commands {
+			gap: 6px 12px;
+		}
+
+		.commands button {
+			justify-self: start;
+			padding-block: 0.45em;
 		}
 	}
 

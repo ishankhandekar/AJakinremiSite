@@ -16,19 +16,49 @@ const stats = [
 	<div class="content">
 		<dl class="stats">
 			{
-				stats.map((stat) => (
-					<div class="stat">
-						<dt>{stat.label}</dt>
+				stats.map((stat, index) => (
+					<div class="stat" style={`--i: ${index}`}>
+						<dt>
+							<span class="drop">{stat.label}</span>
+						</dt>
 						<dd>
-							{stat.value}
-							{stat.suffix && <sup>{stat.suffix}</sup>}
+							<span class="drop">
+								{stat.value}
+								{stat.suffix && <sup>{stat.suffix}</sup>}
+							</span>
 						</dd>
 					</div>
 				))
 			}
 		</dl>
+		<!-- Inline so the title and stats are tucked away before first paint; the headline script drops them in -->
+		<script is:inline>
+			(() => {
+				// The intro plays on every visit, except for a link straight to a section further down
+				const hero = document.querySelector('.hero');
+				if (!hero || location.hash || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+				hero.dataset.intro = 'play';
+				hero.classList.add('booting', 'lines-waiting', 'portrait-waiting', 'title-waiting', 'stats-waiting', 'scroll-waiting');
+				// The header stays out of the way until the very end
+				document.documentElement.dataset.introChrome = '';
+				// The page stays at the top until the intro is over (Layout.astro pauses the smooth scroll too)
+				document.documentElement.dataset.introLock = '';
+				history.scrollRestoration = 'manual';
+				scrollTo(0, 0);
+			})();
+		</script>
+
+		<!-- Ahead of the headline script, which shows it while the intro plays -->
+		<button class="skip" type="button" data-skip-intro>
+			Skip intro
+			<svg viewBox="0 0 12 10" aria-hidden="true">
+				<path d="M1 1l4 4-4 4M6 1l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.2" />
+			</svg>
+		</button>
 
 		<div class="intro">
+			<!-- A short Linux boot log plays here before the greeting; the headline script fills it -->
+			<div class="boot" aria-hidden="true" data-boot></div>
 			<h1>
 				<span class="sr-only">I’m AJ</span>
 				<span aria-hidden="true" data-typed>I’m AJ</span><span class="caret" aria-hidden="true"></span>
@@ -36,24 +66,62 @@ const stats = [
 			<!-- Inline so the headline is cleared before first paint -->
 			<script is:inline>
 				(() => {
+					const hero = document.querySelector('.hero');
 					const el = document.querySelector('[data-typed]');
 					const caret = el?.nextElementSibling;
-					if (!el || !caret || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+					if (!hero || !el || !caret || hero.dataset.intro !== 'play') return;
 
 					const headline = el.textContent;
 					el.textContent = '';
 
-					const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+					// Skipping jumps straight to the finished hero; the steps below stop as soon as it's set
+					let skipped = false;
+					const skip = document.querySelector('[data-skip-intro]');
+					const boot = document.querySelector('[data-boot]');
+					const finish = () => {
+						boot?.replaceChildren();
+						hero.classList.remove('booting', 'lines-waiting', 'portrait-waiting', 'title-waiting', 'stats-waiting');
+						delete document.documentElement.dataset.introLock;
+						window.lenis?.start();
+						skip?.classList.remove('shown');
+						// The header and the scroll prompt come in last
+						setTimeout(() => {
+							delete document.documentElement.dataset.introChrome;
+							hero.classList.remove('scroll-waiting');
+						}, 350);
+					};
+					const skipIntro = () => {
+						if (skipped) return;
+						skipped = true;
+						el.textContent = headline;
+						caret.classList.remove('busy');
+						finish();
+					};
+					skip?.addEventListener('click', skipIntro);
+					skip?.classList.add('shown');
+					addEventListener('keydown', (event) => event.key === 'Escape' && skipIntro());
+					// Using the navigation mid-intro skips it, so the link still goes where it says
+					document.addEventListener(
+						'click',
+						(event) => {
+							if ('introLock' in document.documentElement.dataset && event.target.closest?.('a[href^="#"]')) skipIntro();
+						},
+						true,
+					);
+
+					const sleep = (ms) =>
+						new Promise((resolve, reject) => setTimeout(() => (skipped ? reject() : resolve()), ms));
 					// The caret holds steady while keys are going and blinks when idle
 					const busy = async (work) => {
 						caret.classList.add('busy');
 						await work();
 						caret.classList.remove('busy');
 					};
-					const type = (text, speed) =>
+					const type = (text, speed, onKey) =>
 						busy(async () => {
-							for (const char of text) {
+							for (const [index, char] of [...text].entries()) {
 								el.textContent += char;
+								onKey?.(index);
 								await sleep(speed + Math.random() * 50);
 							}
 						});
@@ -65,21 +133,75 @@ const stats = [
 							}
 						});
 
-					const run = async () => {
-						await sleep(700);
-						await type('Hi', 150);
-						await sleep(900);
-						await erase(120);
-						await sleep(1000);
-						await type(headline, 120);
-					};
+					// systemd-style lines; the status tag is green
+					const bootLines = [
+						'Mounted /home/aj',
+						'Started sshd.service',
+						'Started ansible-pull.timer',
+						'Reached 230+ hosts',
+						'Loaded 20 certifications',
+						'Reached target portfolio.target',
+					];
 
-					Promise.race([document.fonts.load('400 1em "Geist Variable"'), sleep(800)]).then(run, run);
+					const run = async () => {
+						// The hairlines draw in while the machine boots
+						await sleep(250);
+						hero.classList.remove('lines-waiting');
+						await sleep(250);
+						for (const text of bootLines) {
+							const line = document.createElement('p');
+							const status = document.createElement('span');
+							status.className = 'ok';
+							status.textContent = '[  OK  ]';
+							line.append(status, ' ' + text);
+							boot.append(line);
+							await sleep(170 + Math.random() * 130);
+						}
+						await sleep(650);
+						boot.classList.add('out');
+						await sleep(350);
+						boot.replaceChildren();
+						boot.classList.remove('out');
+						hero.classList.remove('booting');
+						await sleep(350);
+
+						await type('Hi', 150);
+						await sleep(800);
+						await erase(120);
+						await sleep(650);
+						// The title drops in and the portrait rises as the "A" lands; the stats follow the "J"
+						const last = [...headline].length - 1;
+						await type(headline, 120, (index) => {
+							if (index === last - 1) hero.classList.remove('title-waiting', 'portrait-waiting');
+						});
+						await sleep(120);
+						finish();
+					};
+					// A rejected sleep means the intro was skipped; nothing left to do
+					const start = () => run().catch(() => {});
+
+					Promise.race([document.fonts.load('400 1em "Geist Variable"'), sleep(800)]).then(start, start);
 				})();
 			</script>
 			<p class="meta">
-				Senior Technical Support Engineer
+				<span class="drop">Senior Technical Support Engineer</span>
 			</p>
+		</div>
+
+		<!-- Placeholder silhouette: swap for the headshot. Lives in .content so phones can give it the space left under the title -->
+		<div class="portrait" aria-hidden="true">
+			<svg viewBox="0 0 660 580" preserveAspectRatio="xMidYMax meet">
+				<defs>
+					<linearGradient id="silhouette" x1="0" y1="0" x2="0" y2="1">
+						<stop offset="0" style="stop-color: var(--silhouette-top)"></stop>
+						<stop offset="1" style="stop-color: var(--silhouette-bottom)"></stop>
+					</linearGradient>
+				</defs>
+				<path
+					fill="url(#silhouette)"
+					d="M330 60c-85 0-140 62-140 150 0 60 22 112 58 146v44c0 18-12 30-34 38l-110 40c-52 20-84 56-84 102h620c0-46-32-82-84-102l-110-40c-22-8-34-20-34-38v-44c36-34 58-86 58-146 0-88-55-150-140-150z"
+				></path>
+			</svg>
 		</div>
 
 		<a class="scroll" href="#about">
@@ -88,22 +210,6 @@ const stats = [
 				<path d="M5 0v10.5M1 6.5l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.1"></path>
 			</svg>
 		</a>
-	</div>
-
-	<!-- Placeholder silhouette: swap for the headshot -->
-	<div class="portrait" aria-hidden="true">
-		<svg viewBox="0 0 660 580" preserveAspectRatio="xMidYMax meet">
-			<defs>
-				<linearGradient id="silhouette" x1="0" y1="0" x2="0" y2="1">
-					<stop offset="0" style="stop-color: var(--silhouette-top)"></stop>
-					<stop offset="1" style="stop-color: var(--silhouette-bottom)"></stop>
-				</linearGradient>
-			</defs>
-			<path
-				fill="url(#silhouette)"
-				d="M330 60c-85 0-140 62-140 150 0 60 22 112 58 146v44c0 18-12 30-34 38l-110 40c-52 20-84 56-84 102h620c0-46-32-82-84-102l-110-40c-22-8-34-20-34-38v-44c36-34 58-86 58-146 0-88-55-150-140-150z"
-			></path>
-		</svg>
 	</div>
 </section>
 
@@ -125,7 +231,7 @@ const stats = [
 		flex-direction: column;
 		align-items: center;
 		gap: clamp(14px, 1.7vw, 26px);
-		color: var(--ink-muted);
+		color: var(--ink-faint);
 		font-size: clamp(12px, 1.15vw, 17px);
 	}
 
@@ -139,7 +245,7 @@ const stats = [
 		flex: 1;
 		width: 1px;
 		background: currentColor;
-		opacity: 0.7;
+		opacity: 0.5;
 	}
 
 	.content {
@@ -156,20 +262,69 @@ const stats = [
 		gap: clamp(20px, 2.2vw, 40px);
 	}
 
+	/* Each stat sits under a hairline with a short green tick, like the role line */
 	.stat {
 		display: flex;
 		flex-direction: column-reverse;
 		justify-content: flex-end;
-		gap: 0.35em;
+		gap: 0.7em;
+		min-width: clamp(128px, 10.5vw, 180px);
+		padding-top: clamp(12px, 1.1vw, 18px);
+		background: linear-gradient(to right, var(--green) 22px, var(--ink-muted) 22px) top / 100% 1px
+			no-repeat;
+		transition: background-size 1s cubic-bezier(0.65, 0, 0.35, 1) calc(var(--i, 0) * 140ms);
+	}
+
+	/* Intro: the hairlines start empty and draw left to right */
+	.lines-waiting .stat,
+	.lines-waiting .meta {
+		background-size: 0% 1px;
 	}
 
 	.stat dd {
-		display: flex;
-		align-items: flex-start;
 		font-size: clamp(30px, 3.3vw, 54px);
 		font-weight: 300;
 		line-height: 1;
 		letter-spacing: -0.02em;
+	}
+
+	/* Each line is clipped at its top edge (the number right at the hairline), so it drops out from under it */
+	.stat dd {
+		clip-path: inset(calc(-1 * clamp(12px, 1.1vw, 18px)) -1em -1em -1em);
+	}
+
+	.stat dt {
+		clip-path: inset(0 -1em -1em -1em);
+	}
+
+	.drop {
+		display: block;
+		transition: transform 0.6s cubic-bezier(0.2, 1.25, 0.35, 1);
+	}
+
+	.stat dd .drop {
+		display: flex;
+		align-items: flex-start;
+		transition-delay: calc(var(--i, 0) * 90ms);
+	}
+
+	.stat dt .drop {
+		transition-delay: calc(var(--i, 0) * 90ms + 80ms);
+	}
+
+	.stats-waiting .stat .drop {
+		transform: translateY(calc(-100% - 20px));
+		transition: none;
+	}
+
+	/* The title drops out from its own hairline */
+	.meta {
+		clip-path: inset(0 -1em -1em -1em);
+	}
+
+	.title-waiting .meta .drop {
+		transform: translateY(calc(-100% - 1.3em - 4px));
+		transition: none;
 	}
 
 	.stat sup {
@@ -181,16 +336,59 @@ const stats = [
 	}
 
 	.stat dt {
-		max-width: 14em;
-		font-size: clamp(10px, 0.8vw, 12px);
-		line-height: 1.35;
+		max-width: 16em;
+		color: var(--ink-body);
+		font-family: var(--font-mono);
+		font-size: clamp(10px, 0.72vw, 11.5px);
+		line-height: 1.5;
+		letter-spacing: 0.08em;
 		text-transform: uppercase;
 	}
 
 	.intro {
+		position: relative;
 		margin-top: auto;
 		margin-bottom: auto;
 		padding-bottom: 7svh;
+	}
+
+	/* Intro: the boot log sits where the headline will be, and the caret waits for it */
+	.boot {
+		position: absolute;
+		top: 0;
+		left: 0;
+		color: var(--ink-faint);
+		font-family: var(--font-mono);
+		font-size: clamp(11px, 0.95vw, 14px);
+		line-height: 1.8;
+		white-space: nowrap;
+		transition: opacity 0.3s;
+	}
+
+	.boot.out {
+		opacity: 0;
+	}
+
+	.boot :global(.ok) {
+		color: var(--green);
+	}
+
+	.booting .caret {
+		visibility: hidden;
+	}
+
+	/* On wide screens the headline leads and the stats sit underneath it */
+	@media (min-aspect-ratio: 4 / 3) {
+		.intro {
+			order: -1;
+			margin-top: 0;
+			margin-bottom: clamp(36px, 6svh, 72px);
+			padding-bottom: 0;
+		}
+
+		.stats {
+			margin-bottom: auto;
+		}
 	}
 
 	h1 {
@@ -245,6 +443,7 @@ const stats = [
 		padding-top: 1.3em;
 		background: linear-gradient(to right, var(--green) 2.6em, var(--ink-muted) 2.6em) top / 100% 1px
 			no-repeat;
+		transition: background-size 1s cubic-bezier(0.65, 0, 0.35, 1) 0.42s;
 		color: var(--ink-soft);
 		font-family: var(--font-mono);
 		font-size: clamp(11px, 0.85vw, 13px);
@@ -260,28 +459,137 @@ const stats = [
 		gap: 0.5em;
 		align-self: flex-start;
 		font-size: clamp(13px, 1.2vw, 18px);
+		transition:
+			opacity 0.7s 0.2s,
+			transform 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.2s,
+			visibility 0s;
+	}
+
+	/* Intro: hidden until everything else has landed */
+	.scroll-waiting .scroll {
+		opacity: 0;
+		visibility: hidden;
+		transform: translateY(8px);
+		transition: none;
 	}
 
 	.scroll svg {
 		color: var(--green);
-		transition: transform 0.2s;
+		animation: scroll-bob 2s ease-in-out infinite;
 	}
 
-	@media (hover: hover) and (pointer: fine) {
-		.scroll:hover svg {
-			transform: translateY(3px);
+	@keyframes scroll-bob {
+		50% {
+			transform: translateY(4px);
 		}
 	}
 
+	@media (prefers-reduced-motion: reduce) {
+		.scroll svg {
+			animation: none;
+		}
+	}
+
+	/* Intro: the header's pieces wait until the end, then settle in one after another */
+	:global(.header > :is(.logo, .nav, .actions)) {
+		transition:
+			opacity 0.7s,
+			transform 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+	}
+
+	:global(.header > .nav) {
+		transition-delay: 0.08s;
+	}
+
+	:global(.header > .actions) {
+		transition-delay: 0.16s;
+	}
+
+	:global(html[data-intro-chrome] .header > :is(.logo, .nav, .actions)) {
+		opacity: 0;
+		transform: translateY(-10px);
+		pointer-events: none;
+	}
+
+	/* Locked at the top while the intro plays */
+	:global(html[data-intro-lock]),
+	:global(html[data-intro-lock] body) {
+		overflow: hidden;
+	}
+
+	/* Only shown while the intro is playing: a small rounded button, white on light, black on dark */
+	.skip {
+		position: fixed;
+		right: clamp(20px, 3vw, 44px);
+		bottom: clamp(20px, 4svh, 40px);
+		z-index: 20;
+		display: inline-flex;
+		align-items: center;
+		gap: 0.7em;
+		padding: 0.85em 1.15em;
+		border: 1px solid var(--rule);
+		border-radius: 10px;
+		background: var(--surface);
+		box-shadow: 0 6px 20px -10px rgb(0 0 0 / 0.25);
+		color: var(--ink);
+		font-family: var(--font-mono);
+		font-size: clamp(11px, 0.8vw, 12.5px);
+		letter-spacing: 0.1em;
+		text-transform: uppercase;
+		cursor: pointer;
+		opacity: 0;
+		visibility: hidden;
+		transition:
+			opacity 0.4s,
+			visibility 0s 0.4s,
+			border-color 0.2s;
+	}
+
+	.skip.shown {
+		opacity: 1;
+		visibility: visible;
+		transition:
+			opacity 0.4s 0.6s,
+			visibility 0s,
+			border-color 0.2s;
+	}
+
+	.skip svg {
+		width: 0.9em;
+		color: var(--green);
+	}
+
+	.skip:focus-visible {
+		outline: 1px solid var(--green);
+		outline-offset: 4px;
+	}
+
+	@media (hover: hover) and (pointer: fine) {
+		.skip:hover {
+			border-color: var(--tree-line);
+		}
+	}
+
+	/* Behind the text: .content is its stacking context */
 	.portrait {
 		position: absolute;
 		right: -3vw;
 		bottom: 0;
-		z-index: 1;
+		z-index: -1;
 		height: 97%;
 		aspect-ratio: 660 / 580;
 		/* On tall, narrow screens keep it from growing across the headline */
 		max-width: 66vw;
+	}
+
+	/* Intro: the portrait rises into view from the bottom edge as the name lands */
+	.portrait {
+		clip-path: inset(0);
+		transition: clip-path 1.4s cubic-bezier(0.65, 0, 0.35, 1);
+	}
+
+	.portrait-waiting .portrait {
+		clip-path: inset(100% 0 0 0);
 	}
 
 	.portrait svg {
@@ -301,12 +609,17 @@ const stats = [
 
 		.stats {
 			display: grid;
-			grid-template-columns: repeat(2, max-content);
-			gap: 16px 36px;
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+			gap: 20px 24px;
+		}
+
+		.stat {
+			min-width: 0;
 		}
 
 		.intro {
 			margin-top: 6svh;
+			margin-bottom: 0;
 			padding-bottom: 0;
 		}
 
@@ -314,9 +627,22 @@ const stats = [
 			font-size: 31vw;
 		}
 
+		/* In the flow here: it takes whatever height is left under the title, down to the bottom edge */
 		.portrait {
-			right: 0;
-			height: 38%;
+			position: relative;
+			right: auto;
+			flex: 1 1 0;
+			min-height: 180px;
+			height: auto;
+			max-width: none;
+			aspect-ratio: auto;
+			margin: 24px -20px -28px;
+		}
+
+		.scroll {
+			position: absolute;
+			bottom: 28px;
+			left: 20px;
 		}
 	}
 </style>

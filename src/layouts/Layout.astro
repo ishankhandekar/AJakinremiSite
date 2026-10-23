@@ -45,9 +45,18 @@ const { title = 'AJ Akinremi' } = Astro.props;
 	import Lenis from 'lenis';
 	import 'lenis/dist/lenis.css';
 
+	declare global {
+		interface Window {
+			lenis?: Lenis;
+		}
+	}
+
 	// Wheel-scroll inertia; touch devices keep their native momentum
 	if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
-		new Lenis({ autoRaf: true, anchors: true, lerp: 0.09 });
+		const lenis = new Lenis({ autoRaf: true, anchors: true, lerp: 0.09 });
+		// The hero intro locks the page at the top until it's done (see Hero.astro), and starts it again itself
+		window.lenis = lenis;
+		if ('introLock' in document.documentElement.dataset) lenis.stop();
 	}
 </script>
 
