@@ -1,7 +1,8 @@
 ---
 // A recreation of SSL2OOL's key generator in the site's own styles, used on the
 // project card in place of a screenshot. It plays a short loop: a filename types in,
-// the algorithm switches, the button is pressed and a key comes out.
+// the algorithm switches (and the key size with it), the button is pressed and a key
+// streams out underneath. The key is random filler, not a real one.
 // Purely decorative: nothing in here is a real control.
 const algorithms = ['RSA', 'ECDSA', 'Ed25519'];
 ---
@@ -14,7 +15,7 @@ const algorithms = ['RSA', 'ECDSA', 'Ed25519'];
 
 	<div class="field">
 		<p class="label">Filename</p>
-		<div class="input">
+		<div class="input filename">
 			<span class="typed" data-filename></span><span class="caret"></span>
 			<span class="placeholder" data-placeholder>e.g., api_private.key</span>
 		</div>
@@ -28,6 +29,16 @@ const algorithms = ['RSA', 'ECDSA', 'Ed25519'];
 		</div>
 	</div>
 
+	<div class="field">
+		<p class="label">Key size</p>
+		<div class="input select">
+			<span class="swap" data-key-size>2048-bit (Standard baseline)</span>
+			<svg class="chevron" viewBox="0 0 12 12" aria-hidden="true">
+				<path d="M3 4.5l3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.2"></path>
+			</svg>
+		</div>
+	</div>
+
 	<div class="button" data-button>
 		<svg viewBox="0 0 16 16" aria-hidden="true">
 			<rect x="3" y="7" width="10" height="7" rx="1.5" />
@@ -38,8 +49,10 @@ const algorithms = ['RSA', 'ECDSA', 'Ed25519'];
 
 	<p class="result" data-result>
 		<span class="tick">✓</span>
-		<span data-result-text>api_private.key created · ECDSA P-256</span>
+		<span data-result-text>api_private.key · ECDSA P-256</span>
 	</p>
+
+	<pre class="pem" data-pem></pre>
 </div>
 
 <script>
@@ -51,6 +64,8 @@ const algorithms = ['RSA', 'ECDSA', 'Ed25519'];
 		const segments = engine.querySelector<HTMLElement>('[data-segments]')!;
 		const button = engine.querySelector<HTMLElement>('[data-button]')!;
 		const buttonLabel = engine.querySelector<HTMLElement>('[data-button-label]')!;
+		const keySize = engine.querySelector<HTMLElement>('[data-key-size]')!;
+		const pem = engine.querySelector<HTMLElement>('[data-pem]')!;
 
 		const name = 'api_private.key';
 		const choose = (index: number) => {
@@ -58,11 +73,28 @@ const algorithms = ['RSA', 'ECDSA', 'Ed25519'];
 			segments.dataset.active = String(index);
 		};
 
+		const sizes = ['2048-bit (Standard baseline)', 'P-256 (prime256v1)'];
+
+		// An EC private key in PEM form: the usual opening bytes, then random base64
+		const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+		const randomBase64 = (length: number) =>
+			Array.from({ length }, () => alphabet[Math.floor(Math.random() * alphabet.length)]).join('');
+		const keyLines = () => {
+			const body = 'MHcCAQEEI' + randomBase64(155) + '==';
+			return [
+				'-----BEGIN EC PRIVATE KEY-----',
+				...(body.match(/.{1,64}/g) ?? []),
+				'-----END EC PRIVATE KEY-----',
+			];
+		};
+
 		// Without motion, show the finished state and stop there
 		if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
 			filename.textContent = name;
 			placeholder.hidden = true;
 			choose(1);
+			keySize.textContent = sizes[1];
+			pem.textContent = keyLines().join('\n');
 			engine.dataset.state = 'done';
 			return;
 		}
@@ -74,8 +106,18 @@ const algorithms = ['RSA', 'ECDSA', 'Ed25519'];
 			filename.textContent = '';
 			placeholder.hidden = false;
 			choose(0);
+			keySize.textContent = sizes[0];
+			pem.textContent = '';
 			buttonLabel.textContent = 'Generate private key';
 			engine.dataset.state = '';
+		};
+
+		// The size follows the algorithm, with a quick fade between the two
+		const swapSize = async (text: string) => {
+			keySize.classList.add('out');
+			await sleep(180);
+			keySize.textContent = text;
+			keySize.classList.remove('out');
 		};
 
 		const play = async () => {
@@ -92,7 +134,9 @@ const algorithms = ['RSA', 'ECDSA', 'Ed25519'];
 				engine.dataset.state = '';
 				await sleep(500);
 				choose(1);
-				await sleep(900);
+				await sleep(250);
+				await swapSize(sizes[1]);
+				await sleep(800);
 				engine.dataset.state = 'pressed';
 				await sleep(160);
 				engine.dataset.state = 'working';
@@ -100,7 +144,12 @@ const algorithms = ['RSA', 'ECDSA', 'Ed25519'];
 				await sleep(900);
 				buttonLabel.textContent = 'Generate private key';
 				engine.dataset.state = 'done';
-				await sleep(3200);
+				await sleep(250);
+				for (const line of keyLines()) {
+					pem.textContent += (pem.textContent ? '\n' : '') + line;
+					await sleep(110);
+				}
+				await sleep(3000);
 				engine.dataset.state = 'fading';
 				await sleep(450);
 			}
@@ -120,12 +169,15 @@ const algorithms = ['RSA', 'ECDSA', 'Ed25519'];
 <style>
 	.engine {
 		display: grid;
+		/* Rows never push the panel wider than its card */
+		grid-template-columns: minmax(0, 1fr);
 		align-content: start;
 		min-height: 100%;
 		gap: 18px;
 		padding: 24px 26px 28px;
 		border: 1px solid var(--tree-line);
-		border-radius: 14px 0 0 0;
+		/* The right-hand corner only shows on phones; elsewhere it runs off the card */
+		border-radius: 14px 14px 0 0;
 		background: var(--surface);
 		color: var(--ink);
 		/* The demo keeps its own type sizes, so it stays legible at any card width */
@@ -176,7 +228,7 @@ const algorithms = ['RSA', 'ECDSA', 'Ed25519'];
 		transition: border-color 0.3s;
 	}
 
-	[data-state='typing'] .input {
+	[data-state='typing'] .filename {
 		border-color: var(--green);
 	}
 
@@ -185,6 +237,26 @@ const algorithms = ['RSA', 'ECDSA', 'Ed25519'];
 		left: 12px;
 		color: var(--ink-dim);
 	}
+
+	.select {
+		justify-content: space-between;
+	}
+
+	.swap {
+		transition: opacity 0.18s;
+	}
+
+	.swap.out {
+		opacity: 0;
+	}
+
+	.chevron {
+		flex: none;
+		width: 12px;
+		height: 12px;
+		color: var(--ink-faint);
+	}
+
 
 	.placeholder[hidden] {
 		display: none;
@@ -280,7 +352,6 @@ const algorithms = ['RSA', 'ECDSA', 'Ed25519'];
 		color: var(--ink-body);
 		font-family: var(--font-mono);
 		font-size: 12px;
-		white-space: nowrap;
 		opacity: 0;
 		transform: translateY(-4px);
 		transition:
@@ -296,5 +367,23 @@ const algorithms = ['RSA', 'ECDSA', 'Ed25519'];
 	[data-state='fading'] .result {
 		opacity: 1;
 		transform: none;
+	}
+
+	/* The generated key, streamed in line by line under the result */
+	.pem {
+		min-height: 9.5em;
+		margin: 0;
+		padding: 12px 14px;
+		border: 1px solid var(--rule);
+		border-radius: 8px;
+		background: var(--tint-faint);
+		color: var(--ink-faint);
+		font-family: var(--font-mono);
+		font-size: 11.5px;
+		line-height: 1.6;
+		/* Full lines fit on wider cards; on phones they wrap instead of running out of view */
+		white-space: pre-wrap;
+		overflow-wrap: anywhere;
+		overflow: hidden;
 	}
 </style>

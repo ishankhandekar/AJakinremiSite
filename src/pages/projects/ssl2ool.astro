@@ -1,0 +1,357 @@
+---
+import SectionBadge from '../../components/SectionBadge.astro';
+import Ssl2oolDemo from '../../components/ssl2ool/Ssl2oolDemo.astro';
+import type { PanelId } from '../../components/ssl2ool/panels';
+import { projects } from '../../data/projects';
+import Layout from '../../layouts/Layout.astro';
+import ProjectNav from '../../components/ProjectNav.astro';
+
+const project = projects.find((item) => item.slug === 'ssl2ool')!;
+const next = projects.find((item) => item.slug !== 'ssl2ool');
+
+const meta = [
+	{ key: 'Stack', value: 'Vue.js · Python · FastAPI' },
+	{ key: 'Built', value: 'October 2023' },
+	{ key: 'Type', value: 'Web app' },
+];
+
+// One row per tool, each with the OpenSSL command it saves people from typing
+const features: { id: PanelId; title: string; text: string; replaces: string }[] = [
+	{
+		id: 'keys',
+		title: 'Key generation',
+		text: 'Pick an algorithm (RSA, ECDSA or Ed25519) and a key size, optionally set a passphrase, and get a private key in one click, with no flags to remember.',
+		replaces: 'openssl genpkey -algorithm EC -pkeyopt ec_paramgen_curve:P-256 -out api_private.key',
+	},
+	{
+		id: 'csr',
+		title: 'CSR renewal',
+		text: 'Renewing a certificate shouldn’t mean retyping its details. Upload the current certificate and its key, and SSL2OOL pulls out the identity and signs a fresh certificate signing request.',
+		replaces: 'openssl x509 -x509toreq -in api.example.com.crt -signkey api_private.key -out api.example.com.csr',
+	},
+	{
+		id: 'cert',
+		title: 'Certificate inspection',
+		text: 'Paste or upload a PEM certificate to see who it’s for, who issued it, when it expires and every name it covers, without decoding it by hand.',
+		replaces: 'openssl x509 -in api.example.com.crt -noout -text',
+	},
+	{
+		id: 'csrInspect',
+		title: 'CSR inspection',
+		text: 'Check a signing request before it goes to a certificate authority: its subject, its alternative names, its key and whether its signature holds up.',
+		replaces: 'openssl req -in api.example.com.csr -noout -text -verify',
+	},
+	{
+		id: 'chain',
+		title: 'Chain analysis',
+		text: 'Point it at a host and port to fetch the certificate chain a server is actually presenting, and check every link from the site’s certificate up to a trusted root.',
+		replaces: 'openssl s_client -connect api.example.com:443 -showcerts',
+	},
+];
+
+const layers = [
+	{ name: 'Vue.js', role: 'Interface', text: 'Point-and-click forms in the browser for every task.' },
+	{ name: 'FastAPI', role: 'API', text: 'A Python service that takes in the files and requests.' },
+	{ name: 'Python', role: 'Crypto', text: 'Does the work: keys, CSRs, Java keystores, certificate parsing and chain checks.' },
+];
+---
+
+<Layout title={`${project.title} | AJ Akinremi`}>
+	<ProjectNav />
+	<main class="page">
+		<header class="head">
+			<SectionBadge label="Project 01" />
+			<h1>{project.title}</h1>
+			<p class="lead">{project.description}</p>
+			<dl class="meta">
+				{
+					meta.map((item) => (
+						<div>
+							<dt>{item.key}</dt>
+							<dd>{item.value}</dd>
+						</div>
+					))
+				}
+			</dl>
+		</header>
+
+		<section class="block" aria-labelledby="tour-title">
+			<p class="note" id="tour-title">//The whole app, one tool at a time</p>
+			<div class="tour">
+				<Ssl2oolDemo />
+			</div>
+			<p class="caption">A recreation of SSL2OOL’s interface. Names and keys shown are examples.</p>
+		</section>
+
+		<section class="block" aria-labelledby="features-title">
+			<h2 class="section-title" id="features-title">What it does</h2>
+			<ol class="features">
+				{
+					features.map((feature, index) => (
+						<li class="feature">
+							<div class="copy">
+								<p class="index">{String(index + 1).padStart(2, '0')}</p>
+								<h3>{feature.title}</h3>
+								<p class="text">{feature.text}</p>
+								<p class="replaces">
+									<span>Instead of</span>
+									<code>$ {feature.replaces}</code>
+								</p>
+							</div>
+							<div class="panel-wrap">
+								<Ssl2oolDemo only={feature.id} />
+							</div>
+						</li>
+					))
+				}
+			</ol>
+		</section>
+
+		<section class="block" aria-labelledby="stack-title">
+			<h2 class="section-title" id="stack-title">How it’s built</h2>
+			<ol class="layers">
+				{
+					layers.map((layer, index) => (
+						<li>
+							<p class="index">
+								{String(index + 1).padStart(2, '0')} // {layer.role}
+							</p>
+							<p class="layer-name">{layer.name}</p>
+							<p class="text">{layer.text}</p>
+						</li>
+					))
+				}
+			</ol>
+		</section>
+
+		{
+			next && (
+				<a class="next" href={`/projects/${next.slug}`}>
+					<span class="next-label">Next project</span>
+					<span class="next-title">
+						{next.title}
+						<svg viewBox="0 0 12 12" aria-hidden="true">
+							<path d="M2 10L10 2M3.5 2H10v6.5" fill="none" stroke="currentColor" stroke-width="1.1" />
+						</svg>
+					</span>
+				</a>
+			)
+		}
+	</main>
+</Layout>
+
+<style>
+	.page {
+		min-height: 100svh;
+		/* Clears the fixed bar at the top */
+		padding: clamp(72px, 8vw, 128px) clamp(20px, 5.4vw, 90px) clamp(40px, 5vw, 80px);
+	}
+
+	.head {
+		margin-top: clamp(32px, 4vw, 64px);
+	}
+
+	h1 {
+		margin-top: clamp(18px, 1.8vw, 28px);
+		font-family: var(--font-display);
+		font-size: clamp(48px, 8vw, 128px);
+		font-weight: 400;
+		line-height: 0.95;
+		letter-spacing: -0.04em;
+	}
+
+	.lead {
+		max-width: 40em;
+		margin-top: clamp(20px, 2.2vw, 34px);
+		color: var(--ink-body);
+		font-size: clamp(15px, 1.25vw, 19px);
+		line-height: 1.7;
+	}
+
+	/* The same mono read-out as elsewhere: label over value, under a hairline with a green tick */
+	.meta {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 18px clamp(28px, 4vw, 64px);
+		margin-top: clamp(28px, 3vw, 48px);
+	}
+
+	.meta div {
+		min-width: 150px;
+		padding-top: 12px;
+		background: linear-gradient(to right, var(--green) 22px, var(--ink-muted) 22px) top / 100% 1px no-repeat;
+	}
+
+	.meta dt,
+	.note,
+	.index,
+	.replaces span {
+		color: var(--ink-faint);
+		font-family: var(--font-mono);
+		font-size: clamp(10px, 0.75vw, 11.5px);
+		letter-spacing: 0.1em;
+		text-transform: uppercase;
+	}
+
+	.meta dd {
+		margin: 6px 0 0;
+		font-size: clamp(14px, 1.1vw, 16px);
+	}
+
+	.block {
+		margin-top: clamp(64px, 8vw, 128px);
+	}
+
+	.note {
+		margin-bottom: clamp(16px, 1.8vw, 24px);
+	}
+
+	.caption {
+		margin-top: 14px;
+		color: var(--ink-faint);
+		font-size: 13px;
+	}
+
+	.section-title {
+		padding-bottom: clamp(18px, 2vw, 28px);
+		border-bottom: 1px solid var(--rule);
+		font-family: var(--font-display);
+		font-size: clamp(28px, 3.4vw, 52px);
+		font-weight: 400;
+		letter-spacing: -0.03em;
+	}
+
+	/* One row per tool, swapping sides each time */
+	.features {
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+
+	.feature {
+		display: grid;
+		grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+		align-items: center;
+		gap: clamp(28px, 5vw, 96px);
+		padding-block: clamp(40px, 5vw, 80px);
+		border-bottom: 1px solid var(--rule);
+	}
+
+	.feature:nth-child(even) .copy {
+		order: 2;
+	}
+
+	h3 {
+		margin: 12px 0 0;
+		font-family: var(--font-display);
+		font-size: clamp(22px, 2.2vw, 34px);
+		font-weight: 500;
+		letter-spacing: -0.02em;
+	}
+
+	.text {
+		margin-top: 14px;
+		color: var(--ink-body);
+		font-size: clamp(14px, 1.05vw, 16px);
+		line-height: 1.7;
+	}
+
+	/* The command it replaces, as it would be typed */
+	.replaces {
+		display: grid;
+		gap: 8px;
+		margin-top: clamp(18px, 2vw, 28px);
+	}
+
+	.replaces code {
+		padding: 10px 12px;
+		overflow-wrap: anywhere;
+		border-left: 2px solid var(--green);
+		background: var(--tint-faint);
+		color: var(--ink-body);
+		font-family: var(--font-mono);
+		font-size: 12px;
+		line-height: 1.6;
+	}
+
+	.panel-wrap {
+		width: 100%;
+		max-width: 560px;
+		justify-self: center;
+	}
+
+	/* Three layers, left to right, each under a hairline */
+	.layers {
+		display: grid;
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+		gap: clamp(20px, 3vw, 48px);
+		margin: clamp(28px, 3vw, 48px) 0 0;
+		padding: 0;
+		list-style: none;
+	}
+
+	.layers li {
+		padding-top: 14px;
+		background: linear-gradient(to right, var(--green) 22px, var(--ink-muted) 22px) top / 100% 1px no-repeat;
+	}
+
+	.layer-name {
+		margin-top: 10px;
+		font-family: var(--font-display);
+		font-size: clamp(20px, 1.8vw, 28px);
+		font-weight: 500;
+		letter-spacing: -0.02em;
+	}
+
+	.next {
+		display: grid;
+		gap: 8px;
+		margin-top: clamp(64px, 8vw, 128px);
+		padding-top: clamp(20px, 2.2vw, 32px);
+		border-top: 1px solid var(--rule);
+	}
+
+	.next-label {
+		color: var(--ink-faint);
+		font-family: var(--font-mono);
+		font-size: clamp(10px, 0.75vw, 11.5px);
+		letter-spacing: 0.1em;
+		text-transform: uppercase;
+	}
+
+	.next-title {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.4em;
+		font-family: var(--font-display);
+		font-size: clamp(28px, 3.4vw, 52px);
+		letter-spacing: -0.03em;
+	}
+
+	.next-title svg {
+		width: 0.45em;
+		height: 0.45em;
+		color: var(--green);
+		transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+	}
+
+	@media (hover: hover) and (pointer: fine) {
+		.next:hover .next-title svg {
+			transform: translate(4px, -4px);
+		}
+	}
+
+	@media (max-width: 860px) {
+		.feature {
+			grid-template-columns: minmax(0, 1fr);
+		}
+
+		.feature:nth-child(even) .copy {
+			order: 0;
+		}
+
+		.layers {
+			grid-template-columns: minmax(0, 1fr);
+		}
+	}
+</style>

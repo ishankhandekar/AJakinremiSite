@@ -70,6 +70,11 @@ const commands: Record<string, Line[]> = {
 		{ text: `linkedin  ${links.linkedin.label}`, href: links.linkedin.href },
 		{ text: `github    ${links.github.label}`, href: links.github.href },
 	],
+	credits: [
+		'Site designed & built by StudioIK.',
+		{ text: 'studioik.design', href: 'https://studioik.design', tone: 'accent' },
+		{ text: 'Built with Astro, self-hosted by AJ.', tone: 'dim' },
+	],
 	ls: ['about.txt   contact.txt   experience.txt   stack.txt   certs/   projects/   resume.pdf'],
 	pwd: ['/home/aj'],
 	help: [
@@ -79,7 +84,8 @@ const commands: Record<string, Line[]> = {
 		'neofetch     system info            uptime      time in IT',
 		'history      career, as a shell     contact     how to reach AJ',
 		'resume       download the CV        open <x>    email, linkedin, github, resume',
-		'ls, cat, pwd, echo, date            clear       exit',
+		'credits      who built this site    ls, cat, pwd, echo, date',
+		'clear        clear the screen       exit        close the terminal',
 		{ text: 'Tab completes, ↑ and ↓ recall earlier commands, Ctrl+C stops output, Ctrl+L clears.', tone: 'dim' },
 	],
 };
@@ -196,6 +202,7 @@ const config = { commands, links, intro };
 				'shell     bash, python',
 				'certs     20',
 				'location  San Diego, CA',
+				'site      built by StudioIK',
 			];
 			// Phones are too narrow for the logo beside the details, so it goes above them
 			const narrow = matchMedia('(max-width: 720px)').matches;

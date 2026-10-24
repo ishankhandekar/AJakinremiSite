@@ -1,0 +1,77 @@
+---
+// The bar across the top of a project page: just the way back. It behaves like the home
+// page header, sitting clear at the top and turning solid with a hairline once scrolled.
+---
+
+<header class="bar" data-project-nav>
+	<a class="back" href="/#projects">
+		<svg viewBox="0 0 12 12" width="11" height="11" aria-hidden="true">
+			<path d="M11 6H1.5M5 2.5L1.5 6 5 9.5" fill="none" stroke="currentColor" stroke-width="1.2"></path>
+		</svg>
+		Back to portfolio
+	</a>
+</header>
+
+<script>
+	const bar = document.querySelector('[data-project-nav]');
+	const update = () => bar?.classList.toggle('scrolled', window.scrollY > 8);
+	update();
+	window.addEventListener('scroll', update, { passive: true });
+</script>
+
+<style>
+	.bar {
+		position: fixed;
+		inset: 0 0 auto 0;
+		z-index: 10;
+		display: flex;
+		align-items: center;
+		padding: clamp(20px, 2.2vw, 36px) clamp(20px, 5.4vw, 90px);
+		transition:
+			padding 0.3s ease,
+			background-color 0.3s ease,
+			box-shadow 0.3s ease;
+	}
+
+	.bar.scrolled {
+		padding-block: clamp(12px, 1vw, 16px);
+		background: var(--surface);
+		box-shadow: 0 1px 0 var(--line);
+	}
+
+	.back {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.6em;
+		color: var(--ink-body);
+		font-size: clamp(13px, 1.1vw, 16px);
+		text-decoration: underline;
+		text-decoration-color: var(--ink-dim);
+		text-decoration-thickness: 1px;
+		text-underline-offset: 0.35em;
+		transition:
+			color 0.2s,
+			text-decoration-color 0.2s;
+	}
+
+	.back svg {
+		color: var(--green);
+		transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+	}
+
+	.back:focus-visible {
+		outline: 2px solid var(--green);
+		outline-offset: 4px;
+	}
+
+	@media (hover: hover) and (pointer: fine) {
+		.back:hover {
+			color: var(--ink);
+			text-decoration-color: var(--green);
+		}
+
+		.back:hover svg {
+			transform: translateX(-3px);
+		}
+	}
+</style>

@@ -124,10 +124,12 @@ import SectionBadge from './SectionBadge.astro';
 <style>
 	.projects {
 		--gutter: clamp(14px, 1.6vw, 24px);
+		/* The page's side margin, which the cards reach across to touch the screen edge */
+		--page-x: clamp(20px, 5.4vw, 90px);
 		/* Placeholder drawings: hairlines and faint fills that follow the theme */
 		--wire: var(--tree-line);
 		--wire-fill: var(--tint);
-		padding: 0 clamp(20px, 5.4vw, 90px) clamp(64px, 9vw, 150px);
+		padding: 0 var(--page-x) clamp(64px, 9vw, 150px);
 	}
 
 	/* A pinned section above ends flush, so this one brings its own space */
@@ -194,8 +196,9 @@ import SectionBadge from './SectionBadge.astro';
 		flex: 1;
 		min-height: 0;
 		overflow: hidden;
-		margin-inline: calc(var(--gutter) * -1);
-		padding-inline: var(--gutter);
+		/* Spans the full screen width so the cards can run into its edges */
+		margin-inline: calc(var(--page-x) * -1);
+		padding-inline: var(--page-x);
 		mask-image: linear-gradient(to bottom, transparent, #000 28px, #000 calc(100% - 48px), transparent);
 	}
 
@@ -215,18 +218,36 @@ import SectionBadge from './SectionBadge.astro';
 		transform-origin: left;
 	}
 
+	/* Cards alternate which edge of the screen they run into: the first the right, the
+	   next the left. That side loses its border and corners, and its padding grows by the
+	   page margin so the content still lines up with the rest of the page. */
 	.card {
+		--pad: clamp(20px, 2.2vw, 34px);
+		--pad-left: var(--pad);
+		--pad-right: calc(var(--pad) + var(--page-x));
 		display: flex;
 		flex-direction: column;
 		gap: clamp(22px, 2.4vw, 36px);
 		grid-column: 1 / -1;
-		padding: clamp(20px, 2.2vw, 34px);
+		margin-right: calc(-1 * var(--page-x));
+		padding: var(--pad) var(--pad-right) var(--pad) var(--pad-left);
 		border: 1px solid var(--rule);
-		border-radius: 16px;
+		border-right: 0;
+		border-radius: 16px 0 0 16px;
 		transition:
 			background-color 0.35s,
 			border-color 0.35s,
 			transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+	}
+
+	.card:nth-child(even) {
+		--pad-left: calc(var(--pad) + var(--page-x));
+		--pad-right: var(--pad);
+		margin-right: 0;
+		margin-left: calc(-1 * var(--page-x));
+		border-right: 1px solid var(--rule);
+		border-left: 0;
+		border-radius: 0 16px 16px 0;
 	}
 
 	.card:focus-visible {
@@ -331,7 +352,7 @@ import SectionBadge from './SectionBadge.astro';
 	.has-shot .visual {
 		position: relative;
 		min-height: clamp(230px, 24vw, 400px);
-		margin: 0 calc(-1 * clamp(20px, 2.2vw, 34px)) calc(-1 * clamp(20px, 2.2vw, 34px)) 0;
+		margin: 0 calc(-1 * var(--pad-right)) calc(-1 * var(--pad)) 0;
 	}
 
 	.shot {
@@ -349,15 +370,34 @@ import SectionBadge from './SectionBadge.astro';
 			box-shadow 0.6s;
 	}
 
-	/* The recreated panel sets its own type sizes, so it needs less overhang than a screenshot */
+	/* The recreated panel sets its own type sizes, so it needs less overhang than a screenshot.
+	   Tall enough to show everything down to the result, with the key running off the bottom */
 	.has-demo .visual {
-		min-height: clamp(330px, 27vw, 420px);
+		min-height: 480px;
 	}
 
 	/* Always runs past the card's bottom edge, however tall the row is */
 	.has-demo .shot {
 		bottom: -2px;
 		width: max(110%, 360px);
+	}
+
+	/* Phones: the panel spans the card edge to edge, set off from the text by a single
+	   hairline, and the card's own rounded corners trim it at the bottom */
+	@media (max-width: 860px) {
+		.has-demo .visual {
+			margin-left: calc(-1 * var(--pad-left));
+		}
+
+		.has-demo .shot {
+			width: 100%;
+		}
+
+		.has-demo .shot :global(.engine) {
+			padding-inline: var(--pad-left) var(--pad-right);
+			border-width: 1px 0 0;
+			border-radius: 0;
+		}
 	}
 
 	/* The app wireframe keeps a true 16:9 frame */
@@ -395,6 +435,15 @@ import SectionBadge from './SectionBadge.astro';
 
 		.card:nth-child(even) {
 			grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+		}
+
+		.has-demo {
+			min-height: clamp(480px, 39vw, 580px);
+		}
+
+		/* Here the row's height decides, so the key runs off the bottom edge */
+		.has-demo .visual {
+			min-height: 0;
 		}
 
 		.card:nth-child(even) .text {

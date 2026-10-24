@@ -114,8 +114,13 @@ const channels: Channel[] = [
 
 	<footer class="footer">
 		<p>[ Site engine // Deployed securely on self-made hosting service — All rights reserved ]</p>
+		<!-- AJ asked for the studio credit to be easy to see -->
 		<p class="credit">
-			Built by <a href="https://studioik.design" target="_blank" rel="noopener">StudioIK</a>
+			Designed &amp; built by <a href="https://studioik.design" target="_blank" rel="noopener"
+				>StudioIK<svg viewBox="0 0 12 12" aria-hidden="true">
+					<path d="M2 10L10 2M3.5 2H10v6.5" fill="none" stroke="currentColor" stroke-width="1.2"></path>
+				</svg>
+			</a>
 		</p>
 	</footer>
 </section>
@@ -262,8 +267,9 @@ const channels: Channel[] = [
 	.footer {
 		display: flex;
 		flex-wrap: wrap;
+		align-items: center;
 		justify-content: space-between;
-		gap: 0.6em 3em;
+		gap: 0.8em 3em;
 		margin: clamp(56px, 8vw, 130px) calc(var(--gutter) * -1) 0;
 		padding: clamp(18px, 2vw, 28px) var(--gutter) 0;
 		border-top: 1px solid var(--rule);
@@ -275,21 +281,44 @@ const channels: Channel[] = [
 		text-transform: uppercase;
 	}
 
+	/* The studio credit reads at body size, in the site's own link style */
 	.credit {
+		color: var(--ink-body);
+		font-family: var(--font-sans);
+		font-size: clamp(14px, 1.1vw, 17px);
+		letter-spacing: normal;
+		text-transform: none;
 		white-space: nowrap;
 	}
 
 	.credit a {
-		color: var(--ink-body);
+		display: inline-flex;
+		align-items: center;
+		gap: 0.35em;
+		color: var(--ink);
+		font-weight: 500;
 		text-decoration: underline;
-		text-decoration-thickness: 1px;
+		text-decoration-color: var(--green);
+		text-decoration-thickness: 1.5px;
 		text-underline-offset: 0.3em;
 		transition: color 0.2s;
 	}
 
+	.credit svg {
+		width: 0.65em;
+		height: 0.65em;
+		color: var(--green);
+		transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+	}
+
+	.credit a:focus-visible {
+		outline: 2px solid var(--green);
+		outline-offset: 4px;
+	}
+
 	@media (hover: hover) and (pointer: fine) {
-		.credit a:hover {
-			color: var(--ink);
+		.credit a:hover svg {
+			transform: translate(2px, -2px);
 		}
 	}
 

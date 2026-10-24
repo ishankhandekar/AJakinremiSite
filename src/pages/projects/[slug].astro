@@ -2,9 +2,14 @@
 import SectionBadge from '../../components/SectionBadge.astro';
 import { projects, type Project } from '../../data/projects';
 import Layout from '../../layouts/Layout.astro';
+import ProjectNav from '../../components/ProjectNav.astro';
 
 export function getStaticPaths() {
-	return projects.map((project) => ({ params: { slug: project.slug }, props: { project } }));
+	// Projects with a page of their own (e.g. ssl2ool.astro) are left out here
+	const ownPages = ['ssl2ool'];
+	return projects
+		.filter((project) => !ownPages.includes(project.slug))
+		.map((project) => ({ params: { slug: project.slug }, props: { project } }));
 }
 
 interface Props {
@@ -15,14 +20,8 @@ const { project } = Astro.props;
 ---
 
 <Layout title={`${project.title} | AJ Akinremi`}>
+	<ProjectNav />
 	<main class="page">
-		<a class="back" href="/#projects">
-			<svg viewBox="0 0 12 12" width="11" height="11" aria-hidden="true">
-				<path d="M11 6H1.5M5 2.5L1.5 6 5 9.5" fill="none" stroke="currentColor" stroke-width="1.2"></path>
-			</svg>
-			Back to portfolio
-		</a>
-
 		<header class="head">
 			<SectionBadge label="Project" />
 			<h1>{project.title}</h1>
@@ -37,26 +36,12 @@ const { project } = Astro.props;
 <style>
 	.page {
 		min-height: 100svh;
-		padding: clamp(28px, 4vw, 64px) clamp(20px, 5.4vw, 90px) clamp(64px, 9vw, 150px);
-	}
-
-	.back {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.6em;
-		color: var(--ink-body);
-		font-size: clamp(13px, 1vw, 15px);
-		transition: color 0.2s;
-	}
-
-	@media (hover: hover) and (pointer: fine) {
-		.back:hover {
-			color: var(--ink);
-		}
+		/* Clears the fixed bar at the top */
+		padding: clamp(72px, 8vw, 128px) clamp(20px, 5.4vw, 90px) clamp(64px, 9vw, 150px);
 	}
 
 	.head {
-		margin-top: clamp(48px, 8vw, 120px);
+		margin-top: clamp(32px, 4vw, 64px);
 		padding-bottom: clamp(28px, 3.4vw, 56px);
 		border-bottom: 1px solid var(--rule);
 	}

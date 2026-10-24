@@ -1,0 +1,1217 @@
+---
+// SSL2OOL's five tools, rebuilt in the site's own styles from AJ's screenshot and animated.
+//
+// Without `only`, it's the whole app as a guided tour: one panel at a time lights up and
+// plays its workflow while the rest dim, with tabs to jump between them. With `only`, it's
+// that one panel on its own, looping its workflow while it's on screen.
+//
+// The inputs and layout follow the real app. The results (inspection fields, the chain)
+// follow what any X.509 tool shows, using example.com names; swap in AJ's real result
+// screens when he sends them. Purely decorative: nothing in here is a real control.
+
+import type { PanelId } from './panels';
+
+interface Props {
+	only?: PanelId;
+}
+
+const { only } = Astro.props;
+
+const tabs: { id: PanelId; label: string }[] = [
+	{ id: 'keys', label: 'Keys' },
+	{ id: 'csr', label: 'CSR renew' },
+	{ id: 'cert', label: 'Inspect cert' },
+	{ id: 'csrInspect', label: 'Inspect CSR' },
+	{ id: 'chain', label: 'Chain' },
+];
+
+const show = (id: PanelId) => !only || only === id;
+
+// What each inspector decodes. The rows are in the page from the start (just hidden), so
+// the panel is already the height it will be once they show. `field` marks the values the
+// script fills in on the visitor's side: dates relative to today, and a random fingerprint.
+type DetailRow = { key: string; value: string; good?: boolean; field?: string };
+const certRows: DetailRow[] = [
+	{ key: 'Subject', value: 'CN=api.example.com' },
+	{ key: 'Issuer', value: 'CN=Example Intermediate CA' },
+	{ key: 'Valid', value: '0000-00-00 → 0000-00-00', field: 'valid' },
+	{ key: 'Expires', value: 'in 62 days', good: true },
+	{ key: 'SANs', value: 'api.example.com, www.example.com' },
+	{ key: 'Key', value: 'EC P-256' },
+	{ key: 'Signature', value: 'ecdsa-with-SHA256' },
+	{ key: 'SHA-256', value: '00:00:00:00:00:00:00:00:…', field: 'fingerprint' },
+];
+const csrRows: DetailRow[] = [
+	{ key: 'Subject', value: 'CN=api.example.com, O=Example Corp' },
+	{ key: 'SANs', value: 'api.example.com, www.example.com' },
+	{ key: 'Key', value: 'EC P-256' },
+	{ key: 'Signature', value: 'ecdsa-with-SHA256' },
+	{ key: 'Self-signed', value: 'valid', good: true },
+];
+const algorithms = ['RSA', 'ECDSA', 'Ed25519'];
+---
+
+<div class:list={['demo', only ? 'single' : 'tour']} data-ssl2ool aria-hidden="true">
+	{
+		!only && (
+			<header class="app-head">
+				<span class="app-icon">
+					<svg viewBox="0 0 24 24">
+						<circle cx="8" cy="15" r="4.5" />
+						<path d="M11.2 11.8L19 4M15.5 7.5l2.5 2.5M17.5 5.5l2 2" />
+					</svg>
+				</span>
+				<div>
+					<p class="app-title">SSL2OOL</p>
+					<p class="app-sub">
+						Manage certificates, generate and inspect keys, handle CSR workflows, and verify certificate chains.
+					</p>
+				</div>
+			</header>
+		)
+	}
+
+	<div class="grid">
+		{
+			show('keys') && (
+				<section class="panel keys" data-panel="keys">
+					<div class="p-head">
+						<p class="p-title">Asymmetric Key Engine</p>
+						<p class="p-sub">Generate a private key without touching OpenSSL</p>
+					</div>
+					<div class="field">
+						<p class="label">Filename</p>
+						<div class="input typing-target">
+							<span data-type="filename" />
+							<span class="caret" />
+							<span class="placeholder">e.g., api_private.key</span>
+						</div>
+					</div>
+					<div class="field">
+						<p class="label">Algorithm profile</p>
+						<div class="segments" data-segments data-active="0">
+							<i class="indicator" />
+							{algorithms.map((name) => (
+								<span class="segment">{name}</span>
+							))}
+						</div>
+					</div>
+					<div class="field">
+						<p class="label">Key size</p>
+						<div class="input select">
+							<span class="swap" data-size>
+								2048-bit (Standard baseline)
+							</span>
+							<svg class="chevron" viewBox="0 0 12 12">
+								<path d="M3 4.5l3 3 3-3" />
+							</svg>
+						</div>
+					</div>
+					<div class="btn" data-btn>
+						<svg viewBox="0 0 16 16">
+							<rect x="3" y="7" width="10" height="7" rx="1.5" />
+							<path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2" />
+						</svg>
+						<span data-btn-label>Generate private key</span>
+					</div>
+					<p class="result" data-result>
+						<span class="tick">✓</span> api_private.key · ECDSA P-256
+					</p>
+					<pre class="pem" data-pem />
+				</section>
+			)
+		}
+
+		{
+			show('csr') && (
+				<section class="panel csr" data-panel="csr">
+					<div class="p-head row">
+						<div>
+							<p class="p-title">X.509 CSR Engine</p>
+							<p class="p-sub">Extract the identity from an existing cert and re-sign</p>
+						</div>
+						<span class="toggle">
+							<span>New</span>
+							<span class="on">Renew</span>
+						</span>
+					</div>
+					<div class="field">
+						<p class="label row">
+							Base certificate
+							<span class="toggle small">
+								<span>Paste PEM</span>
+								<span class="on">Upload file</span>
+							</span>
+						</p>
+						<div class="drop" data-drop="cert">
+							<span class="hint">Upload certificate file (.pem, .crt, .cer)</span>
+							<span class="file">
+								<svg viewBox="0 0 16 16">
+									<path d="M4 1.5h5.5L12.5 4.5v10h-8.5z M9.5 1.5v3h3" />
+								</svg>
+								api.example.com.crt <em>1.9 kB</em>
+							</span>
+						</div>
+					</div>
+					<div class="field">
+						<p class="label row">
+							Signing key
+							<span class="toggle small">
+								<span>Paste PEM</span>
+								<span class="on">Upload file</span>
+							</span>
+						</p>
+						<div class="drop" data-drop="key">
+							<span class="hint">Upload private key file (.key, .pem, .p8)</span>
+							<span class="file">
+								<svg viewBox="0 0 16 16">
+									<path d="M4 1.5h5.5L12.5 4.5v10h-8.5z M9.5 1.5v3h3" />
+								</svg>
+								api_private.key <em>0.2 kB</em>
+							</span>
+						</div>
+					</div>
+					<div class="btn" data-btn>
+						<svg viewBox="0 0 16 16">
+							<path d="M13 5.5A5.5 5.5 0 0 0 3.2 4.6M3 10.5a5.5 5.5 0 0 0 9.8.9M3 1.8v3h3M13 14.2v-3h-3" />
+						</svg>
+						<span data-btn-label>Re-sign existing identity</span>
+					</div>
+					<p class="result" data-result>
+						<span class="tick">✓</span> api.example.com.csr · CN=api.example.com
+					</p>
+					<pre class="pem" data-pem />
+				</section>
+			)
+		}
+
+		{
+			show('cert') && (
+				<section class="panel inspect" data-panel="cert">
+					<div class="p-head row">
+						<p class="p-title">Certificate Inspector</p>
+						<span class="btn small" data-btn>
+							<svg viewBox="0 0 16 16">
+								<circle cx="7" cy="7" r="4.5" />
+								<path d="M10.5 10.5L14 14" />
+							</svg>
+							<span data-btn-label>Inspect details</span>
+						</span>
+					</div>
+					<div class="field">
+						<p class="label">Source</p>
+						<div class="input select">
+							<span>Upload file</span>
+							<svg class="chevron" viewBox="0 0 12 12">
+								<path d="M3 4.5l3 3 3-3" />
+							</svg>
+						</div>
+					</div>
+					<div class="field grow">
+						<p class="label">Raw PEM block</p>
+						<div class="stage">
+							<div class="drop tall" data-drop="pem">
+								<span class="hint">Click to select PEM file</span>
+								<pre class="pasted" data-pasted />
+							</div>
+							<dl class="details" data-details>
+								{certRows.map((row) => (
+									<Fragment>
+										<dt>{row.key}</dt>
+										<dd class:list={{ good: row.good }} data-field={row.field}>
+											{row.value}
+										</dd>
+									</Fragment>
+								))}
+							</dl>
+						</div>
+					</div>
+				</section>
+			)
+		}
+
+		{
+			show('csrInspect') && (
+				<section class="panel inspect" data-panel="csrInspect">
+					<div class="p-head row">
+						<p class="p-title">CSR Inspector</p>
+						<span class="btn small" data-btn>
+							<svg viewBox="0 0 16 16">
+								<circle cx="7" cy="7" r="4.5" />
+								<path d="M10.5 10.5L14 14" />
+							</svg>
+							<span data-btn-label>Inspect details</span>
+						</span>
+					</div>
+					<div class="field">
+						<p class="label">Source</p>
+						<div class="input select">
+							<span>Upload file</span>
+							<svg class="chevron" viewBox="0 0 12 12">
+								<path d="M3 4.5l3 3 3-3" />
+							</svg>
+						</div>
+					</div>
+					<div class="field grow">
+						<p class="label">Raw CSR PEM block</p>
+						<div class="stage">
+							<div class="drop tall" data-drop="pem">
+								<span class="hint">Click to select PEM file</span>
+								<pre class="pasted" data-pasted />
+							</div>
+							<dl class="details" data-details>
+								{csrRows.map((row) => (
+									<Fragment>
+										<dt>{row.key}</dt>
+										<dd class:list={{ good: row.good }} data-field={row.field}>
+											{row.value}
+										</dd>
+									</Fragment>
+								))}
+							</dl>
+						</div>
+					</div>
+				</section>
+			)
+		}
+
+		{
+			show('chain') && (
+				<section class="panel chain" data-panel="chain">
+					<div class="p-head">
+						<p class="p-title">Remote Certificate Chain Analyzer</p>
+					</div>
+					<div class="field">
+						<p class="label">Target URL / port</p>
+						<div class="input typing-target">
+							<span data-type="host" />
+							<span class="caret" />
+							<span class="placeholder">api.domain.local:443</span>
+						</div>
+					</div>
+					<div class="btn" data-btn>
+						<span data-btn-label>Analyze chain</span>
+					</div>
+					<ol class="links" data-links />
+					<p class="result" data-result>
+						<span class="tick">✓</span> Chain complete · 3 certificates · TLS 1.3
+					</p>
+				</section>
+			)
+		}
+	</div>
+
+	{
+		!only && (
+			<nav class="tabs">
+				{tabs.map((tab, index) => (
+					<button type="button" tabindex="-1" data-tab={tab.id}>
+						<span class="num">{String(index + 1).padStart(2, '0')}</span>
+						{tab.label}
+					</button>
+				))}
+			</nav>
+		)
+	}
+</div>
+
+<script>
+	type PanelId = 'keys' | 'csr' | 'cert' | 'csrInspect' | 'chain';
+
+	// A run of a workflow. Its waits throw once the run has been stopped, which unwinds
+	// whatever was mid-way; in `instant` mode they don't wait at all (used for reduced motion).
+	const STOP = Symbol('stop');
+	class Run {
+		alive = true;
+		constructor(readonly instant = false) {}
+		wait(ms: number) {
+			if (this.instant) return Promise.resolve();
+			return new Promise<void>((resolve, reject) =>
+				setTimeout(() => (this.alive ? resolve() : reject(STOP)), ms),
+			);
+		}
+	}
+
+	const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+	const base64 = (length: number) =>
+		Array.from({ length }, () => alphabet[Math.floor(Math.random() * alphabet.length)]).join('');
+	const pemBlock = (label: string, prefix: string, length: number) => [
+		`-----BEGIN ${label}-----`,
+		...((prefix + base64(length)).match(/.{1,64}/g) ?? []),
+		`-----END ${label}-----`,
+	];
+	const fingerprint = () =>
+		Array.from({ length: 8 }, () =>
+			Math.floor(Math.random() * 256)
+				.toString(16)
+				.toUpperCase()
+				.padStart(2, '0'),
+		).join(':') + ':…';
+
+	// Certificate dates around today, so "expires in" always reads true
+	const day = 86_400_000;
+	const iso = (offset: number) => new Date(Date.now() + offset * day).toISOString().slice(0, 10);
+
+	const $ = <T extends Element = HTMLElement>(root: Element, selector: string) => root.querySelector<T>(selector)!;
+
+	const type = async (run: Run, field: HTMLElement, text: string, speed = 70) => {
+		const target = $(field, '[data-type]');
+		field.classList.add('has-text', 'typing');
+		if (run.instant) target.textContent = text;
+		else
+			for (const char of text) {
+				target.textContent += char;
+				await run.wait(speed + Math.random() * 45);
+			}
+		field.classList.remove('typing');
+	};
+
+	const press = async (run: Run, button: HTMLElement, working: string, ms = 900) => {
+		const label = $(button, '[data-btn-label]');
+		const idle = label.textContent;
+		button.classList.add('pressed');
+		await run.wait(150);
+		button.classList.remove('pressed');
+		button.classList.add('working');
+		label.textContent = working;
+		await run.wait(ms);
+		label.textContent = idle;
+		button.classList.remove('working');
+	};
+
+	const stream = async (run: Run, target: HTMLElement, lines: string[], ms = 95) => {
+		for (const line of lines) {
+			target.textContent += (target.textContent ? '\n' : '') + line;
+			await run.wait(ms);
+		}
+	};
+
+	// Shows the decoded rows one after another
+	const revealDetails = async (run: Run, list: HTMLElement) => {
+		for (const row of list.querySelectorAll('dt')) {
+			row.classList.add('shown');
+			row.nextElementSibling?.classList.add('shown');
+			await run.wait(85);
+		}
+	};
+
+	// Each panel's workflow. `reset` puts it back to empty; `play` runs it once.
+	const workflows: Record<PanelId, { reset(panel: HTMLElement): void; play(panel: HTMLElement, run: Run): Promise<void> }> = {
+		keys: {
+			reset(panel) {
+				const field = $(panel, '.typing-target');
+				field.classList.remove('has-text', 'typing');
+				$(field, '[data-type]').textContent = '';
+				$(panel, '[data-segments]').dataset.active = '0';
+				$(panel, '[data-size]').textContent = '2048-bit (Standard baseline)';
+				panel.classList.remove('done');
+				$(panel, '[data-pem]').textContent = '';
+			},
+			async play(panel, run) {
+				await run.wait(500);
+				await type(run, $(panel, '.typing-target'), 'api_private.key', 55);
+				await run.wait(350);
+				$(panel, '[data-segments]').dataset.active = '1';
+				await run.wait(300);
+				const size = $(panel, '[data-size]');
+				size.classList.add('out');
+				await run.wait(180);
+				size.textContent = 'P-256 (prime256v1)';
+				size.classList.remove('out');
+				await run.wait(600);
+				await press(run, $(panel, '[data-btn]'), 'Generating…');
+				panel.classList.add('done');
+				await run.wait(200);
+				await stream(run, $(panel, '[data-pem]'), pemBlock('EC PRIVATE KEY', 'MHcCAQEEI', 155));
+			},
+		},
+		csr: {
+			reset(panel) {
+				panel.querySelectorAll('[data-drop]').forEach((drop) => drop.classList.remove('filled', 'landing'));
+				panel.classList.remove('done');
+				$(panel, '[data-pem]').textContent = '';
+			},
+			async play(panel, run) {
+				for (const name of ['cert', 'key']) {
+					await run.wait(550);
+					const drop = $(panel, `[data-drop="${name}"]`);
+					drop.classList.add('landing');
+					await run.wait(220);
+					drop.classList.remove('landing');
+					drop.classList.add('filled');
+				}
+				await run.wait(650);
+				await press(run, $(panel, '[data-btn]'), 'Re-signing…');
+				panel.classList.add('done');
+				await run.wait(200);
+				await stream(run, $(panel, '[data-pem]'), pemBlock('CERTIFICATE REQUEST', 'MIIBHDCBwwIBADA', 175));
+			},
+		},
+		cert: {
+			reset(panel) {
+				resetInspector(panel);
+			},
+			async play(panel, run) {
+				$(panel, '[data-field="valid"]').textContent = `${iso(-28)} → ${iso(62)}`;
+				$(panel, '[data-field="fingerprint"]').textContent = fingerprint();
+				await inspect(panel, run, pemBlock('CERTIFICATE', 'MIIB4TCCAYegAwIBAgIU', 240));
+			},
+		},
+		csrInspect: {
+			reset(panel) {
+				resetInspector(panel);
+			},
+			async play(panel, run) {
+				await inspect(panel, run, pemBlock('CERTIFICATE REQUEST', 'MIIBHDCBwwIBADA', 175));
+			},
+		},
+		chain: {
+			reset(panel) {
+				const field = $(panel, '.typing-target');
+				field.classList.remove('has-text', 'typing');
+				$(field, '[data-type]').textContent = '';
+				$(panel, '[data-links]').replaceChildren();
+				panel.classList.remove('done');
+			},
+			async play(panel, run) {
+				await run.wait(500);
+				await type(run, $(panel, '.typing-target'), 'api.example.com:443', 60);
+				await run.wait(450);
+				await press(run, $(panel, '[data-btn]'), 'Analyzing…', 1000);
+				const list = $(panel, '[data-links]');
+				const links = [
+					['api.example.com', 'leaf · expires in 62 days'],
+					['Example Intermediate CA', 'intermediate · expires in 2 yrs'],
+					['Example Root CA', 'root · trusted'],
+				];
+				for (const [depth, [name, note]] of links.entries()) {
+					const item = document.createElement('li');
+					item.style.setProperty('--depth', String(depth));
+					const title = document.createElement('span');
+					title.className = 'name';
+					title.textContent = name;
+					const detail = document.createElement('span');
+					detail.className = 'note';
+					detail.textContent = note;
+					item.append(title, detail);
+					list.append(item);
+					await run.wait(260);
+				}
+				panel.classList.add('done');
+			},
+		},
+	};
+
+	function resetInspector(panel: HTMLElement) {
+		panel.classList.remove('has-pem', 'done');
+		$(panel, '[data-pasted]').textContent = '';
+		panel.querySelectorAll('.details .shown').forEach((row) => row.classList.remove('shown'));
+	}
+
+	async function inspect(panel: HTMLElement, run: Run, pem: string[]) {
+		await run.wait(550);
+		panel.classList.add('has-pem');
+		await stream(run, $(panel, '[data-pasted]'), pem, 70);
+		await run.wait(450);
+		await press(run, $(panel, '[data-btn]'), 'Inspecting…', 700);
+		panel.classList.add('done');
+		await revealDetails(run, $(panel, '[data-details]'));
+	}
+
+	const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+	for (const demo of document.querySelectorAll<HTMLElement>('[data-ssl2ool]')) {
+		const panels = [...demo.querySelectorAll<HTMLElement>('[data-panel]')];
+		const order = panels.map((panel) => panel.dataset.panel as PanelId);
+		const tabs = [...demo.querySelectorAll<HTMLElement>('[data-tab]')];
+		const tour = demo.classList.contains('tour');
+
+		// Without motion: every panel shows its finished result, nothing moves
+		if (reducedMotion) {
+			for (const panel of panels) {
+				const workflow = workflows[panel.dataset.panel as PanelId];
+				workflow.reset(panel);
+				void workflow.play(panel, new Run(true)).catch(() => {});
+			}
+			continue;
+		}
+
+		let run: Run | null = null;
+		let visible = false;
+		let index = 0;
+
+		const activate = (next: number) => {
+			index = (next + order.length) % order.length;
+			panels.forEach((panel, i) => panel.classList.toggle('active', !tour || i === index));
+			tabs.forEach((tab, i) => tab.classList.toggle('active', i === index));
+		};
+
+		const stop = () => {
+			if (run) run.alive = false;
+			run = null;
+		};
+
+		const loop = async () => {
+			stop();
+			const current = new Run();
+			run = current;
+			try {
+				while (visible && current.alive) {
+					const panel = panels[index];
+					const workflow = workflows[order[index]];
+					workflow.reset(panel);
+					await workflow.play(panel, current);
+					await current.wait(tour ? 2200 : 3000);
+					// The tour moves on; a single panel fades back and plays again
+					if (tour) activate(index + 1);
+					else {
+						panel.classList.add('fading');
+						await current.wait(450);
+						panel.classList.remove('fading');
+					}
+				}
+			} catch (error) {
+				if (error !== STOP) throw error;
+			}
+		};
+
+		// Clicking a tab jumps straight to that tool
+		tabs.forEach((tab, i) =>
+			tab.addEventListener('click', () => {
+				activate(i);
+				if (visible) loop();
+			}),
+		);
+
+		activate(0);
+		new IntersectionObserver(([entry]) => {
+			visible = entry.isIntersecting;
+			if (visible) loop();
+			else stop();
+		}).observe(demo);
+	}
+</script>
+
+<style>
+	/* ---------- Shared panel look ---------- */
+
+	.demo {
+		--radius: 12px;
+		color: var(--ink);
+		font-size: 13.5px;
+	}
+
+	.panel {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		align-content: start;
+		gap: 14px;
+		padding: 20px 22px 22px;
+		border: 1px solid var(--rule);
+		border-radius: var(--radius);
+		background: var(--surface);
+		transition:
+			opacity 0.5s,
+			border-color 0.5s;
+	}
+
+	.panel.fading {
+		opacity: 0.35;
+		transition: opacity 0.4s;
+	}
+
+	.p-head.row,
+	.label.row {
+		display: flex;
+		align-items: flex-start;
+		justify-content: space-between;
+		gap: 12px;
+	}
+
+	.label.row {
+		align-items: center;
+	}
+
+	.p-title {
+		font-family: var(--font-display);
+		font-size: 16px;
+		font-weight: 500;
+		letter-spacing: -0.01em;
+	}
+
+	.p-sub {
+		margin-top: 3px;
+		color: var(--ink-faint);
+		font-size: 12.5px;
+		line-height: 1.45;
+	}
+
+	.field {
+		display: grid;
+		gap: 7px;
+		min-width: 0;
+	}
+
+	.field.grow {
+		align-content: start;
+	}
+
+	.label {
+		color: var(--ink-faint);
+		font-family: var(--font-mono);
+		font-size: 10px;
+		letter-spacing: 0.1em;
+		text-transform: uppercase;
+	}
+
+	.input {
+		position: relative;
+		display: flex;
+		align-items: center;
+		height: 36px;
+		padding: 0 12px;
+		overflow: hidden;
+		border: 1px solid var(--rule);
+		border-radius: 8px;
+		font-family: var(--font-mono);
+		font-size: 12.5px;
+		white-space: nowrap;
+		transition: border-color 0.3s;
+	}
+
+	.input.typing {
+		border-color: var(--green);
+	}
+
+	.placeholder {
+		position: absolute;
+		left: 12px;
+		color: var(--ink-dim);
+	}
+
+	.has-text .placeholder {
+		display: none;
+	}
+
+	.caret {
+		display: none;
+		width: 1.5px;
+		height: 14px;
+		margin-left: 1px;
+		background: var(--green);
+	}
+
+	.typing .caret {
+		display: inline-block;
+	}
+
+	.select {
+		justify-content: space-between;
+	}
+
+	.chevron {
+		flex: none;
+		width: 12px;
+		height: 12px;
+		color: var(--ink-faint);
+	}
+
+	svg {
+		fill: none;
+		stroke: currentColor;
+		stroke-width: 1.3;
+	}
+
+	.swap {
+		transition: opacity 0.18s;
+	}
+
+	.swap.out {
+		opacity: 0;
+	}
+
+	/* Algorithm picker: a green block slides to the chosen option */
+	.segments {
+		position: relative;
+		display: grid;
+		grid-template-columns: repeat(3, 1fr);
+		padding: 3px;
+		border: 1px solid var(--rule);
+		border-radius: 8px;
+	}
+
+	.indicator {
+		position: absolute;
+		top: 3px;
+		bottom: 3px;
+		left: 3px;
+		width: calc((100% - 6px) / 3);
+		border-radius: 5px;
+		background: var(--green);
+		transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+	}
+
+	[data-active='1'] .indicator {
+		transform: translateX(100%);
+	}
+
+	.segment {
+		position: relative;
+		padding: 6px 0;
+		color: var(--ink-faint);
+		font-size: 12.5px;
+		text-align: center;
+		transition: color 0.3s;
+	}
+
+	[data-active='0'] .segment:nth-of-type(1),
+	[data-active='1'] .segment:nth-of-type(2) {
+		color: var(--on-green);
+		font-weight: 500;
+	}
+
+	/* Small two-way switches; the chosen side is filled */
+	.toggle {
+		display: inline-flex;
+		flex: none;
+		padding: 2px;
+		border: 1px solid var(--rule);
+		border-radius: 7px;
+		font-family: var(--font-sans);
+		font-size: 11.5px;
+		letter-spacing: normal;
+		text-transform: none;
+	}
+
+	.toggle span {
+		padding: 3px 9px;
+		border-radius: 5px;
+		color: var(--ink-faint);
+	}
+
+	.toggle .on {
+		background: var(--ink);
+		color: var(--bg);
+	}
+
+	.toggle.small {
+		font-size: 10.5px;
+	}
+
+	.toggle.small span {
+		padding: 2px 7px;
+	}
+
+	.btn {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 8px;
+		height: 38px;
+		border-radius: 8px;
+		background: var(--ink);
+		color: var(--bg);
+		font-size: 13px;
+		font-weight: 500;
+		transition:
+			transform 0.15s,
+			opacity 0.3s;
+	}
+
+	.btn svg {
+		width: 14px;
+		height: 14px;
+	}
+
+	.btn.small {
+		flex: none;
+		height: 28px;
+		padding: 0 10px;
+		font-size: 11.5px;
+	}
+
+	.btn.small svg {
+		width: 12px;
+		height: 12px;
+	}
+
+	.btn.pressed {
+		transform: scale(0.96);
+	}
+
+	.btn.working {
+		opacity: 0.65;
+	}
+
+	.result {
+		display: flex;
+		gap: 7px;
+		margin-top: -4px;
+		color: var(--ink-body);
+		font-family: var(--font-mono);
+		font-size: 11.5px;
+		opacity: 0;
+		transform: translateY(-4px);
+		transition:
+			opacity 0.35s,
+			transform 0.35s;
+	}
+
+	.done .result {
+		opacity: 1;
+		transform: none;
+	}
+
+	.tick {
+		color: var(--green);
+	}
+
+	/* PEM output, streamed in a line at a time */
+	.pem,
+	.pasted {
+		margin: 0;
+		color: var(--ink-faint);
+		font-family: var(--font-mono);
+		font-size: 10.5px;
+		line-height: 1.6;
+		white-space: pre-wrap;
+		overflow-wrap: anywhere;
+		overflow: hidden;
+	}
+
+	.pem {
+		height: 9.4em;
+		padding: 10px 12px;
+		border: 1px solid var(--rule);
+		border-radius: 8px;
+		background: var(--tint-faint);
+	}
+
+	/* Upload zones: dashed until a file lands */
+	.drop {
+		position: relative;
+		display: grid;
+		place-items: center;
+		height: 52px;
+		border: 1px dashed var(--tree-line);
+		border-radius: 8px;
+		color: var(--ink-faint);
+		font-size: 12px;
+		transition:
+			border-color 0.25s,
+			background-color 0.25s;
+	}
+
+	.drop.landing {
+		border-color: var(--green);
+		background: color-mix(in srgb, var(--green) 8%, transparent);
+	}
+
+	.drop .file {
+		display: none;
+		align-items: center;
+		gap: 8px;
+		color: var(--ink);
+		font-family: var(--font-mono);
+		font-size: 12px;
+	}
+
+	.drop .file svg {
+		width: 14px;
+		height: 14px;
+		color: var(--green);
+	}
+
+	.drop .file em {
+		color: var(--ink-faint);
+		font-style: normal;
+	}
+
+	.drop.filled {
+		border-style: solid;
+		border-color: var(--rule);
+	}
+
+	.drop.filled .hint {
+		display: none;
+	}
+
+	.drop.filled .file {
+		display: inline-flex;
+	}
+
+	/* Inspectors: the pasted PEM is replaced by its decoded details in the same space */
+	.stage {
+		display: grid;
+	}
+
+	.stage > * {
+		grid-area: 1 / 1;
+	}
+
+	/* Fills the same space the decoded details take, so nothing shifts when they swap */
+	.drop.tall {
+		height: auto;
+		min-height: 172px;
+	}
+
+	.pasted {
+		display: none;
+		align-self: start;
+		justify-self: stretch;
+		padding: 10px 12px;
+	}
+
+	.inspect.has-pem .drop.tall {
+		place-items: start stretch;
+		border-style: solid;
+		border-color: var(--rule);
+	}
+
+	.inspect.has-pem .hint {
+		display: none;
+	}
+
+	.inspect.has-pem .pasted {
+		display: block;
+	}
+
+	.inspect.done .drop.tall {
+		visibility: hidden;
+	}
+
+	.details {
+		display: grid;
+		grid-template-columns: auto minmax(0, 1fr);
+		align-content: start;
+		gap: 6px 14px;
+		margin: 0;
+		padding: 10px 12px;
+		border: 1px solid var(--rule);
+		border-radius: 8px;
+		font-size: 11.5px;
+		visibility: hidden;
+	}
+
+	.inspect.done .details {
+		visibility: visible;
+	}
+
+	.details dt,
+	.details dd {
+		opacity: 0;
+		transition: opacity 0.25s;
+	}
+
+	.details .shown {
+		opacity: 1;
+	}
+
+	.details dt {
+		color: var(--ink-faint);
+		font-family: var(--font-mono);
+		font-size: 10px;
+		letter-spacing: 0.08em;
+		line-height: 1.7;
+		text-transform: uppercase;
+	}
+
+	.details dd {
+		margin: 0;
+		font-family: var(--font-mono);
+		line-height: 1.6;
+		overflow-wrap: anywhere;
+	}
+
+	.details dd.good {
+		color: var(--green-text);
+	}
+
+	/* Chain analyzer: each link of the chain indents under the one it was signed by */
+	.links {
+		display: grid;
+		gap: 9px;
+		min-height: 120px;
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+
+	.links :global(li) {
+		position: relative;
+		display: grid;
+		gap: 2px;
+		padding-left: calc(18px + var(--depth) * 16px);
+		animation: link-in 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+	}
+
+	.links :global(li)::before {
+		content: '✓';
+		position: absolute;
+		left: calc(var(--depth) * 16px);
+		color: var(--green);
+		font-size: 12px;
+	}
+
+	.links :global(.name) {
+		font-family: var(--font-mono);
+		font-size: 12px;
+	}
+
+	.links :global(.note) {
+		color: var(--ink-faint);
+		font-size: 11.5px;
+	}
+
+	@keyframes link-in {
+		from {
+			opacity: 0;
+			transform: translateY(-4px);
+		}
+	}
+
+	/* ---------- The whole app, as a tour ---------- */
+
+	.tour {
+		padding: clamp(16px, 2vw, 28px);
+		border: 1px solid var(--rule);
+		border-radius: 18px;
+		background: var(--tint-faint);
+	}
+
+	.app-head {
+		display: flex;
+		align-items: center;
+		gap: 14px;
+		margin-bottom: clamp(16px, 2vw, 24px);
+	}
+
+	.app-icon {
+		display: grid;
+		flex: none;
+		place-items: center;
+		width: 40px;
+		height: 40px;
+		border: 1px solid var(--rule);
+		border-radius: 10px;
+		background: var(--surface);
+	}
+
+	.app-icon svg {
+		width: 20px;
+		height: 20px;
+		color: var(--green);
+	}
+
+	.app-title {
+		font-family: var(--font-display);
+		font-size: 18px;
+		font-weight: 600;
+		letter-spacing: -0.01em;
+	}
+
+	.app-sub {
+		margin-top: 2px;
+		color: var(--ink-faint);
+		font-size: 13px;
+	}
+
+	/* The same arrangement as the real app: two tools on top, three underneath */
+	.tour .grid {
+		display: grid;
+		grid-template-columns: repeat(6, minmax(0, 1fr));
+		gap: clamp(10px, 1.2vw, 16px);
+	}
+
+	.tour .keys,
+	.tour .csr {
+		grid-column: span 3;
+	}
+
+	.tour .inspect,
+	.tour .chain {
+		grid-column: span 2;
+	}
+
+	/* The tool being shown is lit; the rest step back */
+	.tour .panel:not(.active) {
+		opacity: 0.42;
+	}
+
+	.tour .panel.active {
+		border-color: color-mix(in srgb, var(--green) 55%, var(--rule));
+	}
+
+	.tabs {
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: center;
+		gap: 6px 22px;
+		margin-top: clamp(16px, 2vw, 24px);
+	}
+
+	.tabs button {
+		display: inline-flex;
+		gap: 0.6em;
+		padding: 4px 0;
+		border: 0;
+		background: none;
+		color: var(--ink-faint);
+		font-family: var(--font-mono);
+		font-size: 11px;
+		letter-spacing: 0.1em;
+		text-transform: uppercase;
+		text-decoration: underline;
+		text-decoration-color: transparent;
+		text-decoration-thickness: 1.5px;
+		text-underline-offset: 0.5em;
+		cursor: pointer;
+		transition:
+			color 0.3s,
+			text-decoration-color 0.3s;
+	}
+
+	.tabs .num {
+		color: var(--ink-dim);
+	}
+
+	.tabs button.active {
+		color: var(--ink);
+		text-decoration-color: var(--green);
+	}
+
+	@media (hover: hover) and (pointer: fine) {
+		.tabs button:hover {
+			color: var(--ink);
+		}
+	}
+
+	/* Narrower screens: one tool at a time, at its own height, with the tabs to move
+	   between them */
+	@media (max-width: 960px) {
+		.tour .grid {
+			grid-template-columns: minmax(0, 1fr);
+		}
+
+		.tour .panel:not(.active) {
+			display: none;
+		}
+
+		.tabs {
+			justify-content: flex-start;
+		}
+	}
+
+	@media (max-width: 720px) {
+		.app-sub {
+			display: none;
+		}
+	}
+
+	/* ---------- One tool on its own ---------- */
+
+	.single .panel {
+		padding: 22px 24px 24px;
+		box-shadow: 0 24px 60px -36px rgb(0 0 0 / 0.35);
+	}
+</style>

@@ -51,6 +51,14 @@ const { title = 'AJ Akinremi' } = Astro.props;
 		}
 	}
 
+	// For anyone who opens the developer tools
+	console.log(
+		'%c>_%c Designed & built by StudioIK%c\nhttps://studioik.design',
+		'color:#12a150;font:600 14px monospace',
+		'font:600 13px sans-serif',
+		'color:#888;font:12px monospace',
+	);
+
 	// Wheel-scroll inertia; touch devices keep their native momentum
 	if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
 		const lenis = new Lenis({ autoRaf: true, anchors: true, lerp: 0.09 });
